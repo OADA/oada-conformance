@@ -1,0 +1,60 @@
+//client secret must validate against "public key from client registration document" (?)
+
+    //Generate Client Secret (which only should be known by provider and client)
+
+    //JWS
+    //typ = Type
+    //alg = Algorithm
+    //kid = Key Id (?)
+    var cs_header = {
+	  "typ": "JWT",
+	  "alg": "RS256",
+	  "kid": "nc63dhaSdd82w32udx6v"
+	}
+
+	//TODO: How to obtain `kid`
+
+
+	//JWT
+	//ac = Access code
+	//iat = Issued At
+	//aud = Audience
+	//iss = issuer
+	var cs_payload = {
+	  "ac": "Pi2dY-FBxZqLx81lTbDM4WGlI",
+	  "iat": 1418421102,
+	  "aud": "https://provider.oada-dev.com/token",
+	  "iss": "3klaxu838akahf38acucaix73@identity.oada-dev.com"
+	}
+
+	//JWK ?
+	//TODO: not sure about this part
+	//kty = Key Type
+	//use = Public Key Use
+	//alg = Algorithm
+	//kid = Key Id (base64)
+	//n = Modulus (base64)   - ---? 
+	//e = Public Exponent (base64) ---- ?
+	var pubkey = {
+	  "kty": "RSA",
+	  "use": "sig",
+	  "alg": "RS256",
+	  "kid": "nc63dhaSdd82w32udx6v",
+	  "n": "AKj8uuRIHMaq-EJVf2d1QoB1DSvFvYQ3Xa1gvVxaXgxDiF9-Dh7bO5f0VotrYD05MqvY9X_zxF_ioceCh3_rwjNFVRxNnnIfGx8ooOO-1f4SZkHE-mbhFOe0WFXJqt5PPSL5ZRYbmZKGUrQWvRRy_KwBHZDzD51b0-rCjlqiFh6N",
+	  "e": "AQAB"
+	}
+
+	// var hash_header = 
+
+
+
+
+grant_type=authorization_code
+code=5MZVZOgNV-nh3brHM78UoaJ-w
+redirect_uri=https%3A%2F%2Fclient.oada-dev.com%2Fredirect
+client_id=3klaxu838akahf38acucaix73%40identity.oada-dev.com
+client_secret=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5jNjNkaGFTZGQ4MnczMnVkeDZ2In0.eyJhYyI6IjVNWlZaT2dOVi1uaDNickhNNzhVb2FKLXciLCJpYXQiOjE0MTg2Nzc5NzUsImF1ZCI6Imh0dHBzOi8vaWRlbnRpdHkub2FkYS1kZXYuY29tL3Rva2VuIiwiaXNzIjoiM2tsYXh1ODM4YWthaGYzOGFjdWNhaXg3M0BpZGVudGl0eS5vYWRhLWRldi5jb20ifQ.oDIk3cde6xKfyQMCU3lBL1gmWbEqDcy2rH5pmPPrH7xk9yM7cx-lJC5oVDSVi42SGL1gCR2r6ATjHPVy-y-DBEbvPyBmDHkK3TD6bdqPlL9NgLxgH7UsMt9aFuvIjYkCUTKoF5aURqfUlO5fRpECvoJfchCDYgxP7LQwAZ2ic8M
+
+
+
+WHY does identity server have a token accesspoint 

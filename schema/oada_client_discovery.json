@@ -1,0 +1,10 @@
+{
+    "title": "client discovery document v1",
+    "type": "object",
+    "required": ["client_discovery"],
+    "properties": {
+        "client_discovery": {
+            "type": "string"
+        }
+    }
+}
