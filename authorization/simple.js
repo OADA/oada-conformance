@@ -1,3 +1,8 @@
+/**
+* Generic test script
+*
+**/
+
 var request = require('superagent');
 var cheerio = require('cheerio');
 var jwt = require('jsonwebtoken');
@@ -11,9 +16,9 @@ var discovery_doc = null;
 var IDENTITY_PROVIDER = "https://identity.oada-dev.com";
 var OADA_PROVIDER = "https://provider.oada-dev.com";
 
-var CLIENT_ID = "3klaxu838akahf38acucaix73@identity.oada-dev.com";
-var CLIENT_KEY_ID = "nc63dhaSdd82w32udx6v";
-var CLIENT_REDIR_URL = "https://client.oada-dev.com/redirect";
+var CLIENT_ID = "389kxhcnjmashlsxd8@identity.oada-dev.com";
+var CLIENT_KEY_ID = "xkja3u7ndod83jxnzhs6";
+var CLIENT_REDIR_URL = "https://example.org/redirect";
 
 
 var utils = {
@@ -178,9 +183,9 @@ function generateClientSecret(key, issuer, audience, accessCode){
 */
 function getTokenWithCode(ac){
 	var token_endpoint = wellknown_doc["token_endpoint"];
-	var cert = fs.readFileSync('certs/balmos.pem');
+	var cert = fs.readFileSync('certs/private.pem');
 
-	// console.log(token_endpoint);
+	console.log(cert);
 
 	var secret = generateClientSecret(
 			cert,

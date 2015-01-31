@@ -196,6 +196,8 @@ describe('Obtaining a token in code flow', function(){
 			    req.expect(200)
 			        .end(function(err,res){
 			    		should.not.exist(err);
+			    		global.test["grantscreen"] = {"html": ""}
+			    		global.test.grantscreen.html = res.text;
 			    		done();
 			    	});
 	  		});
@@ -208,11 +210,32 @@ describe('Obtaining a token in code flow', function(){
   describe('Grant Screen', function(){
 
 
-  		it('correctly displays all requested scopes', function(done){
+  		it('should correctly displays all requested scopes', function(done){
+  			$ = cheerio.load(global.test.grantscreen.html);
+  			//How should we decide whether all scopes are displayed
   			done();
   		});
 
-  		it('correctly displays trust level', function(done){
+  		it('should correctly displays trust level', function(done){
+
+  		 	done();
+  		});
+
+  		it('should send access code to client when all permissions are granted', function(done){
+
+  		 	done();
+  		});
+
+  });
+
+  describe('Token', function(){
+
+
+  		it('should exchange access code for a token', function(done){
+  			done();
+  		});
+
+  		it('should verify that token is valid', function(done){
   		 	done();
   		});
 
