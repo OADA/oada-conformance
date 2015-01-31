@@ -1,29 +1,30 @@
 {
-  "name": "oada-test-oauth",
+  "name": "oada-compliance",
   "version": "1.0.0",
-  "main": "test.js",
+  "description": "OADA Compliance Test Suite",
+  "main": "config.js",
+  "dependencies": {
+    "cheerio": "^0.18.0",
+    "jsonwebtoken": "^3.2.2",
+    "chai-json-schema": "^1.1.0",
+    "chai": "^1.10.0",
+    "should": "^4.6.1",
+    "jws-jwk": "^0.1.4",
+    "supertest": "^0.15.0",
+    "superagent": "^0.21.0"
+  },
+  "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha testall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OADA/oada-compliance.git"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "cheerio": "*",
-    "jsonwebtoken": "^3.2.2",
-    "supertest": "^0.15.0",
-    "should": "^4.6.1",
-    "jws-jwk": "^0.1.4",
-    "chai": "^1.10.0",
-    "chai-json-schema": "^1.1.0"
-  },
-  "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ssabpisa/oada-test-oauth.git"
-  },
   "bugs": {
-    "url": "https://github.com/ssabpisa/oada-test-oauth/issues"
+    "url": "https://github.com/OADA/oada-compliance/issues"
   },
-  "homepage": "https://github.com/ssabpisa/oada-test-oauth",
-  "description": "Automated test for OADA OAuth 2.0 Flow"
+  "homepage": "https://github.com/OADA/oada-compliance"
 }
