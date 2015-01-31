@@ -12,8 +12,7 @@ var config = require('../config.js').authorization;
 var global = {
 	test : {}
 }
-request = request(config.uri);
-
+var request = request.agent(config.uri);
 
 /**
 *  determine absolute URI from relative URI
@@ -34,10 +33,16 @@ var getRelativePath = function(uri){
 	return path;
 }
 
+var getQueryString = function(dict){
+		var str = [];
+		for(var key in dict){
+			str.push(key + "=" + encodeURIComponent(dict[key]));
+		}
+		return str.join("&");
+}
+
 /**
-*
 *  Part 1 - Check that it can do OAuth 
-*
 */
 
 describe('Check Pre-requisites', function(){
@@ -99,7 +104,6 @@ describe('Check Pre-requisites', function(){
 
 
 describe('Obtaining a token in code flow', function(){
-
   describe('Logging in', function(){
   	    before(function (){
 	    	//TODO: clear cookies
@@ -146,38 +150,66 @@ describe('Obtaining a token in code flow', function(){
 		    });
 	  	});
 
-  		it('authorized access, when using correct credential', function(done){
-  			var postdata = {};
-  			//construct the post data from config
-  			for(var i in global.test.login.fields){
-  				var name = global.test.login.fields[i];
-  				postdata[name] = config.login_fields_values[name];
-  			}
 
-			request
-				.post(getRelativePath(global.test.login["action"]))
-			    .type('form') 
-			    .redirects(0)
-				.send(postdata)
-				.end(function(err, res){
-					//TODO: how do I know access has been granted
-					should.not.exist(err);
-					console.log(res.headers['set-cookie'])
-					done();
-				});
-  		 	
-  		});
 
-  		it('denied access, when using gibberish credential', function(done){
-  		 	done();
-  		});
+  		describe('Login with provided credential' , function(){
+  			it('should save cookie', function(done){
+	  			var postdata = {};
+	  			//construct the post data from config
+	  			for(var i in global.test.login.fields){
+	  				var name = global.test.login.fields[i];
+	  				postdata[name] = config.login_fields_values[name];
+	  			}
+
+	  			global.state_var = "xyz";  //TODO: gen rand string
+
+	  			//perform a login
+
+				request
+					.post(getRelativePath(global.test.login["action"]))
+				    .type('form') 
+				    .redirects(0)
+					.send(postdata)
+					.end(function(err, res){
+						should.not.exist(err);
+						done();
+					});
+
+
+	  		});
+
+	  		it('should authorize', function(done){
+	  			var parameters = {
+					    	"response_type" : "code",
+					    	"client_id": config.gold_client.client_id,
+					    	"state" : global.state_var,
+					    	"redirect_uri": config.gold_client.redirect,
+					    	"scope": "bookmarks.fields"
+				}
+			    
+			    var auth_url = getRelativePath(global.test.oada_configuration["authorization_endpoint"]);
+			    	auth_url += "/" + "?" + getQueryString(parameters);
+
+			    var req = request
+			    		.get(auth_url)
+			    		.type('form');
+			    req.expect(200)
+			        .end(function(err,res){
+			    		should.not.exist(err);
+			    		done();
+			    	});
+	  		});
+  		})
+
+  		
 
   });
 
   describe('Grant Screen', function(){
 
+
   		it('correctly displays all requested scopes', function(done){
-  		 	done();
+  			done();
   		});
 
   		it('correctly displays trust level', function(done){
