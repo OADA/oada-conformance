@@ -15,7 +15,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "mocha testall.js"
+    "test": "bash test"
   },
   "repository": {
     "type": "git",

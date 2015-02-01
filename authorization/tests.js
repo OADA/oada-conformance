@@ -9,9 +9,12 @@ var fs = require('fs');
 var jws = require('jws-jwk').shim();
 
 var config = require('../config.js').authorization;
+var test_options = require('../config.js').options;
+
 var global = {
 	test : {}
 }
+
 var request = request.agent(config.uri);
 
 /**
@@ -25,8 +28,18 @@ var getAbsoluteURI = function(scope, relative_url){
     return url;
 }
 
-var getRelativePath = function(uri){
-	var path = uri.replace(config.uri, "");
+/*
+*  get Relative path given full URI
+*  - note there are corner cases that are not implemented
+*  here. 
+*/
+var getRelativePath = function(urlstr){
+
+	//TODO: if urlstr is in form https://host.com/c  -> /c
+	//      if urlstr form /c    				     -> /c
+	//      if urlstr in form c  					 -> CUR_URL + /c
+
+	var path = urlstr.replace(config.uri, "");
 	if(path[0] != "/"){
 		path = "/" + path;
 	}
@@ -34,15 +47,43 @@ var getRelativePath = function(uri){
 }
 
 var getQueryString = function(dict){
-		var str = [];
-		for(var key in dict){
-			str.push(key + "=" + encodeURIComponent(dict[key]));
-		}
-		return str.join("&");
+	var str = [];
+	for(var key in dict){
+		str.push(key + "=" + encodeURIComponent(dict[key]));
+	}
+	return str.join("&");
 }
 
+var getQueryParameters = function(uristr){
+	var m = uristr.split("?")[1].split("&");
+	var dict = {};
+	for(var i in m){
+		var pair = m[i].split("=");
+		dict[pair[0]] = pair[1];
+	}
+	return dict;
+}
+
+function generateClientSecret(key, issuer, audience, accessCode ,kid){
+	var sec = {
+		ac : accessCode
+	}
+	var options = {
+		algorithm: 'RS256',
+		audience: audience,
+		issuer: issuer,
+		headers: {
+			'kid': kid
+		}
+	}
+
+
+	return jwt.sign(sec, key, options);
+}
+
+
 /**
-*  Part 1 - Check that it can do OAuth 
+*  Test Part 1 - Check that it can do OAuth 
 */
 
 describe('Check Pre-requisites', function(){
@@ -81,7 +122,7 @@ describe('Check Pre-requisites', function(){
 	      .expect('Content-Type', /json/)
 	      .expect(200)
 	      .end(function(err,res){
-	      	should.not.exist(err);
+	      	should.not.exist(err, res.text);
 
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      				      require("./schema/oada_client_discovery.json"));
@@ -128,7 +169,7 @@ describe('Obtaining a token in code flow', function(){
 		      .get(path)
 		      .redirects(10)
 		      .end(function(err,res){
-		      	should.not.exist(err);
+		      	should.not.exist(err,res.text);
 		      	global.test["login"] = {};
 		      	var current_uri = config.uri + res.req.path;
 		      	$ = cheerio.load(res.text);
@@ -168,10 +209,11 @@ describe('Obtaining a token in code flow', function(){
 				request
 					.post(getRelativePath(global.test.login["action"]))
 				    .type('form') 
+					.set('User-Agent',test_options.user_agent)
 				    .redirects(0)
 					.send(postdata)
 					.end(function(err, res){
-						should.not.exist(err);
+						should.not.exist(err, res.text);
 						done();
 					});
 
@@ -183,7 +225,7 @@ describe('Obtaining a token in code flow', function(){
 					    	"response_type" : "code",
 					    	"client_id": config.gold_client.client_id,
 					    	"state" : global.state_var,
-					    	"redirect_uri": config.gold_client.redirect,
+					    	"redirect_uri": config.gold_client.redirect_uri,
 					    	"scope": "bookmarks.fields"
 				}
 			    
@@ -192,10 +234,12 @@ describe('Obtaining a token in code flow', function(){
 
 			    var req = request
 			    		.get(auth_url)
+			    		.set('User-Agent',test_options.user_agent)
 			    		.type('form');
+
 			    req.expect(200)
 			        .end(function(err,res){
-			    		should.not.exist(err);
+			    		should.not.exist(err, res.text);
 			    		global.test["grantscreen"] = {"html": ""}
 			    		global.test.grantscreen.html = res.text;
 			    		done();
@@ -208,10 +252,13 @@ describe('Obtaining a token in code flow', function(){
   });
 
   describe('Grant Screen', function(){
-
+  		var $;
+  		before(function(){
+  			$ = cheerio.load(global.test.grantscreen.html);
+  		});
 
   		it('should correctly displays all requested scopes', function(done){
-  			$ = cheerio.load(global.test.grantscreen.html);
+  			
   			//How should we decide whether all scopes are displayed
   			done();
   		});
@@ -222,20 +269,85 @@ describe('Obtaining a token in code flow', function(){
   		});
 
   		it('should send access code to client when all permissions are granted', function(done){
+  			//steal access code from query string
 
-  		 	done();
+  			var data = {};
+
+  			$("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
+				data[$(this).attr("name")] = $(this).attr("value");
+			});
+
+			var form_action = $("form").attr("action");
+			var post_url = getRelativePath(form_action);
+
+			request
+				.post(post_url)
+				.set('User-Agent',test_options.user_agent)
+				.type('form') 
+				.send(data)
+				.redirects(0)
+				.expect(302)
+				.end(function(err, res){
+					should.not.exist(err, res.text);
+					//intercept the redirection
+					var intercepted_redir = getQueryParameters(res.headers.location);
+
+					global.test.access_code = intercepted_redir.code;
+					//make sure states are equal
+					assert.equal(global.state_var, intercepted_redir.state);
+
+					done();
+				});
+
+  		 	
   		});
 
   });
 
-  describe('Token', function(){
+  describe('Obtaining Token', function(){
+  		var cert;
+  		var secret;
+  		var token_endpoint;
 
+  		before(function(){
+  			token_endpoint = global.test.oada_configuration.token_endpoint;
+  			cert = fs.readFileSync('certs/balmos.pem');
+  			secret = generateClientSecret(
+				cert,
+				config.gold_client.client_id,
+				token_endpoint,
+				global.test.access_code,
+				config.gold_client.key_id
+			);
+
+  		});
 
   		it('should exchange access code for a token', function(done){
-  			done();
+  			
+			var post_param = {
+				"grant_type": "authorization_code",
+				"code": global.test.access_code,
+				"redirect_uri": config.gold_client.redirect_uri,
+				"client_id": config.gold_client.client_id,
+				"client_secret": secret
+			}
+
+			var post_to = getRelativePath(token_endpoint);
+			request
+				.post(post_to)
+				.type('form') 
+				.set('User-Agent', test_options.user_agent)
+				.send(post_param)
+				.expect(200)
+				.end(function(err, res){
+		      		should.not.exist(err, res.text);
+		      		global.test.token_response = JSON.parse(res.text);
+					done();
+				});
   		});
 
   		it('should verify that token is valid', function(done){
+  			console.log(global.test.token_response);
   		 	done();
   		});
 
