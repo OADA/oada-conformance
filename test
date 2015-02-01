@@ -1,1 +1,4 @@
-mocha authorization/tests.js
+#!/bin/bash
+#
+cd authorization
+mocha tests.js
