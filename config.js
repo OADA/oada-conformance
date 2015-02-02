@@ -7,9 +7,9 @@ exports.authorization = {
   	password: "pass"
   },
   gold_client : {
-	client_id: "3klaxu838akahf38acucaix73@identity.oada-dev.com",
-	key_id: "nc63dhaSdd82w32udx6v",
-	redirect_uri: "https://client.oada-dev.com/redirect"
+  	client_id: "389kxhcnjmashlsxd8@identity.oada-dev.com",
+  	key_id: "xkja3u7ndod83jxnzhs6",
+  	redirect_uri: "https://example.org/redirect"
   }
 };
 

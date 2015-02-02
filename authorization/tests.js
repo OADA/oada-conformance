@@ -311,7 +311,7 @@ describe('Obtaining a token in code flow', function(){
 
   		before(function(){
   			token_endpoint = global.test.oada_configuration.token_endpoint;
-  			cert = fs.readFileSync('certs/balmos.pem');
+  			cert = fs.readFileSync('certs/private.pem');
   			secret = generateClientSecret(
 				cert,
 				config.gold_client.client_id,
