@@ -74,7 +74,7 @@ describe('Check Pre-requisites', function(){
 
 
 
-describe('Obtaining a token in implicit flow', function(){
+describe('Obtaining token (implicit flow)', function(){
   describe('Logging in', function(){
   	    before(function (){
 	    	//TODO: clear cookies
