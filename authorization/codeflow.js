@@ -1,13 +1,15 @@
+/*
+*  Tests ability to get token in OAuth 2 code flow
+*
+*/
 var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
 var assert = chai.assert;
 var should = chai.should();
 var cheerio = require('cheerio');
-var jwt = require('jsonwebtoken');
 var fs = require('fs');
-var jws = require('jws-jwk').shim();
-
+var utils = require('../utils.js');
 var config = require('../config.js').authorization;
 var test_options = require('../config.js').options;
 
@@ -16,71 +18,6 @@ var global = {
 }
 
 var request = request.agent(config.uri);
-
-/**
-*  determine absolute URI from relative URI
-*/
-var getAbsoluteURI = function(scope, relative_url){
- 	var url = scope + "/" + relative_url;
-    if(relative_url[0] == "/"){
-    	url = relative_url.replace(/^\//, config.uri + "/");
-    }
-    return url;
-}
-
-/*
-*  get Relative path given full URI
-*  - note there are corner cases that are not implemented
-*  here. 
-*/
-var getRelativePath = function(urlstr){
-
-	//TODO: if urlstr is in form https://host.com/c  -> /c
-	//      if urlstr form /c    				     -> /c
-	//      if urlstr in form c  					 -> CUR_URL + /c
-
-	var path = urlstr.replace(config.uri, "");
-	if(path[0] != "/"){
-		path = "/" + path;
-	}
-	return path;
-}
-
-var getQueryString = function(dict){
-	var str = [];
-	for(var key in dict){
-		str.push(key + "=" + encodeURIComponent(dict[key]));
-	}
-	return str.join("&");
-}
-
-var getQueryParameters = function(uristr){
-	var m = uristr.split("?")[1].split("&");
-	var dict = {};
-	for(var i in m){
-		var pair = m[i].split("=");
-		dict[pair[0]] = pair[1];
-	}
-	return dict;
-}
-
-function generateClientSecret(key, issuer, audience, accessCode ,kid){
-	var sec = {
-		ac : accessCode
-	}
-	var options = {
-		algorithm: 'RS256',
-		audience: audience,
-		issuer: issuer,
-		headers: {
-			'kid': kid
-		}
-	}
-
-
-	return jwt.sign(sec, key, options);
-}
-
 
 /**
 *  Test Part 1 - Check that it can do OAuth 
@@ -156,7 +93,7 @@ describe('Obtaining a token in code flow', function(){
 		    // and parse its form format
 
 		    var login_uri = global.test.oada_configuration.authorization_endpoint;
-		    var path = getRelativePath(login_uri);
+		    var path = utils.getRelativePath(config.uri,login_uri);
 
 		    /* It may or may not redirect us. 
 		     1. if it redirects (302)
@@ -185,8 +122,8 @@ describe('Obtaining a token in code flow', function(){
 					global.test.login["fields"].push($(this).attr("name"));
 				});
 
-				global.test.login["action"] = getAbsoluteURI(current_uri, form_action);
-
+				global.test.login["action"] = utils.getAbsoluteURI(config.uri, current_uri, form_action);
+				//console.log(global.test.login["action"] )
 		      	done();
 		    });
 	  	});
@@ -207,7 +144,7 @@ describe('Obtaining a token in code flow', function(){
 	  			//perform a login
 
 				request
-					.post(getRelativePath(global.test.login["action"]))
+					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
 				    .type('form') 
 					.set('User-Agent',test_options.user_agent)
 				    .redirects(0)
@@ -229,8 +166,8 @@ describe('Obtaining a token in code flow', function(){
 					    	"scope": "bookmarks.fields"
 				}
 			    
-			    var auth_url = getRelativePath(global.test.oada_configuration["authorization_endpoint"]);
-			    	auth_url += "/" + "?" + getQueryString(parameters);
+			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
+			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
 
 			    var req = request
 			    		.get(auth_url)
@@ -278,7 +215,7 @@ describe('Obtaining a token in code flow', function(){
 			});
 
 			var form_action = $("form").attr("action");
-			var post_url = getRelativePath(form_action);
+			var post_url = utils.getRelativePath(config.uri, form_action);
 
 			request
 				.post(post_url)
@@ -290,8 +227,8 @@ describe('Obtaining a token in code flow', function(){
 				.end(function(err, res){
 					should.not.exist(err, res.text);
 					//intercept the redirection
-					var intercepted_redir = getQueryParameters(res.headers.location);
-
+					var intercepted_redir = utils.getQueryParameters(res.headers.location);
+					intercepted_redir.should.have.property('code');
 					global.test.access_code = intercepted_redir.code;
 					//make sure states are equal
 					assert.equal(global.state_var, intercepted_redir.state);
@@ -304,7 +241,8 @@ describe('Obtaining a token in code flow', function(){
 
   });
 
-  describe('Obtaining Token', function(){
+  
+  describe('Obtaining Token (Code Flow)', function(){
   		var cert;
   		var secret;
   		var token_endpoint;
@@ -312,7 +250,7 @@ describe('Obtaining a token in code flow', function(){
   		before(function(){
   			token_endpoint = global.test.oada_configuration.token_endpoint;
   			cert = fs.readFileSync('certs/private.pem');
-  			secret = generateClientSecret(
+  			secret = utils.generateClientSecret(
 				cert,
 				config.gold_client.client_id,
 				token_endpoint,
@@ -332,7 +270,7 @@ describe('Obtaining a token in code flow', function(){
 				"client_secret": secret
 			}
 
-			var post_to = getRelativePath(token_endpoint);
+			var post_to = utils.getRelativePath(config.uri, token_endpoint);
 			request
 				.post(post_to)
 				.type('form') 
@@ -347,7 +285,8 @@ describe('Obtaining a token in code flow', function(){
   		});
 
   		it('should verify that token is valid', function(done){
-  			console.log(global.test.token_response);
+  			global.test.token_response.should.have.property('access_token');
+  			global.test.token_response.should.have.property('expires_in');
   		 	done();
   		});
 

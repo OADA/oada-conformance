@@ -10,9 +10,14 @@ exports.authorization = {
   	client_id: "389kxhcnjmashlsxd8@identity.oada-dev.com",
   	key_id: "xkja3u7ndod83jxnzhs6",
   	redirect_uri: "https://example.org/redirect"
+  },
+  gold_server: { 
+	client_id: "",
+	key_id: "",
+	redirect_uri: ""
   }
 };
 
 exports.options = {
-	user_agent : "OADA-TEST/1.0 (mocha; node-js)"
+	user_agent : "OADA-Compliance-Test/1.1 (mocha; node-js)"
 }

@@ -13,13 +13,13 @@ var jws = require('jws-jwk').shim();
 var wellknown_doc = null;
 var discovery_doc = null;
 
-var IDENTITY_PROVIDER = "https://identity.oada-dev.com";
+var IDENTITY_PROVIDER = "https://localhost";
 var OADA_PROVIDER = "https://provider.oada-dev.com";
 
-var CLIENT_ID = "389kxhcnjmashlsxd8@identity.oada-dev.com";
-var CLIENT_KEY_ID = "xkja3u7ndod83jxnzhs6";
+var CLIENT_ID = "3klaxu838akahf38acucaix73@identity.oada-dev.com";
+var CLIENT_KEY_ID = "389kxhcnjmashlsxd8";
 var CLIENT_REDIR_URL = "https://example.org/redirect";
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 var utils = {
 	'joinparam' : function(dict){
@@ -47,23 +47,23 @@ var utils = {
 function init(cb){
 	var wellurl = IDENTITY_PROVIDER + "/.well-known/oada-configuration"
 	var clientdisurl = IDENTITY_PROVIDER + "/clientDiscovery?clientId=" + CLIENT_ID
-
+	console.log(clientdisurl)
 	request.get(wellurl).end(function(e,res){
 		try{
 			wellknown_doc = JSON.parse(res.text);
 			request.get(clientdisurl).end(function(e,res){
 				try{
 					discovery_doc = JSON.parse(res.text);
-					CLIENT_REDIR_URL = discovery_doc["redirectUrls"][0];
+					CLIENT_REDIR_URL = discovery_doc["redirectUrls"][discovery_doc["redirectUrls"].length - 1];
 					cb();
 				}catch(e){
-					console.error(res.text)
+					console.error(e)
 					throw "clientDiscovery document cannot be parsed"
 				}
 				
 			})
 		}catch(e){
-			console.error(res.text)
+			console.error(e)
 			throw ".well-known document cannot be parsed"
 		}
 	});
@@ -90,7 +90,7 @@ function tryLogin(){
 	.post(fullurl)
     .type('form') 
     .set('User-Agent','Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0')
-	.send({username: "andy", password: "pass"})
+	.send({username: "frank", password: "pass"})
 	.end(didLogin);
 }
 
@@ -111,6 +111,7 @@ function getAccessCode(){
    	// req.end(didGetAccessCode);
    	agent
    	.get(auth_url)
+    .type('form') 
    	.end(didGetGrantScreen);
 }
 
@@ -124,7 +125,7 @@ function didGetGrantScreen(err, res){
 	//TODO: here we can check for 'Privacy and Data Use Principles '
 	//TODO: we can also check for 'registered with a trusted provider. '
 	//TODO: and check for 'requesting access to' list
-
+	console.log(res);
 	var data = {};
 	//parse form
 	$ = cheerio.load(res.text);
@@ -147,6 +148,8 @@ function didGetGrantScreen(err, res){
 }
 
 function didGrantPermission(err, res){
+	//.headers.location
+	console.log(res);
 	var qrystr = utils.expandURL(res.request.url);
 	console.log(qrystr);
 	getTokenWithCode(qrystr.code);
