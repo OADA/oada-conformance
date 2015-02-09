@@ -16,9 +16,12 @@ var discovery_doc = null;
 var IDENTITY_PROVIDER = "https://localhost";
 var OADA_PROVIDER = "https://provider.oada-dev.com";
 
-var CLIENT_ID = "3klaxu838akahf38acucaix73@identity.oada-dev.com";
-var CLIENT_KEY_ID = "389kxhcnjmashlsxd8";
-var CLIENT_REDIR_URL = "https://example.org/redirect";
+//this will cause server to look  up  at
+//identity.oada-dev need to generate .pem for localhost
+var CLIENT_ID = "3klaxu838akahf38acucaix73@identity.oada-dev.com"; 
+
+var CLIENT_KEY_ID = "nc63dhaSdd82w32udx6v";
+var CLIENT_REDIR_URL = "https://client.oada-dev.com/redirect";
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 var utils = {
@@ -186,7 +189,7 @@ function generateClientSecret(key, issuer, audience, accessCode){
 */
 function getTokenWithCode(ac){
 	var token_endpoint = wellknown_doc["token_endpoint"];
-	var cert = fs.readFileSync('certs/private.pem');
+	var cert = fs.readFileSync('certs/' + CLIENT_KEY_ID + '.pem');
 
 	console.log(cert);
 
