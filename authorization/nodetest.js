@@ -66,7 +66,7 @@ function init(cb){
 				
 			})
 		}catch(e){
-			console.error(e)
+			console.log(e)
 			throw ".well-known document cannot be parsed"
 		}
 	});
