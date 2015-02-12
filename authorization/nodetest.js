@@ -13,7 +13,7 @@ var jws = require('jws-jwk').shim();
 var wellknown_doc = null;
 var discovery_doc = null;
 
-var IDENTITY_PROVIDER = "https://localhost";
+var IDENTITY_PROVIDER = "https://localhost:4443";
 var OADA_PROVIDER = "https://provider.oada-dev.com";
 
 //this will cause server to look  up  at
