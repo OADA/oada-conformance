@@ -1,4 +1,6 @@
 #!/bin/bash
 #
+ROOT=$(pwd)
 cd authorization
-mocha tests.js
+$ROOT/node_modules/mocha/bin/mocha codeflow.js
+exit $?
