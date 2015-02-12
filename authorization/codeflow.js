@@ -12,6 +12,8 @@ var fs = require('fs');
 var utils = require('../utils.js');
 var config = require('../config.js').authorization;
 var test_options = require('../config.js').options;
+//Allow self signed certs
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 var global = {
 	test : {}
