@@ -2,5 +2,8 @@
 #
 ROOT=$(pwd)
 cd authorization
+
 $ROOT/node_modules/mocha/bin/mocha codeflow.js
+$ROOT/node_modules/mocha/bin/mocha implicitflow.js
+
 exit $?

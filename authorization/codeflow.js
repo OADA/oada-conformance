@@ -263,7 +263,7 @@ describe('Obtaining a token in code flow', function(){
   		});
 
   		it('should exchange access code for a token', function(done){
-  			
+  			console.log(secret);
 			var post_param = {
 				"grant_type": "authorization_code",
 				"code": global.test.access_code,
