@@ -132,8 +132,64 @@ describe('Obtaining a token in code flow', function(){
 
 
 
+  		// describe('Login with fake credential' , function(){
+  		// 	it('should reject', function(done){
+	  	// 		var postdata = {};
+	  	// 		//construct the post data from config
+	  	// 		for(var i in global.test.login.fields){
+	  	// 			var name = global.test.login.fields[i];
+	  	// 			postdata[name] = config.login_fields_values[name] + "@";
+	  	// 		}
+
+	  	// 		global.state_var = "xyz";  //TODO: gen rand string
+
+	  	// 		//perform a login
+
+				// request
+				// 	.post(utils.getRelativePath(config.uri, global.test.login["action"]))
+				//     .type('form') 
+				// 	.set('User-Agent',test_options.user_agent)
+				//     .redirects(0)
+				// 	.send(postdata)
+				// 	.end(function(err, res){
+				// 		should.not.exist(err, res.text);
+				// 		done();
+				// 	});
+
+
+	  	// });
+
+
   		describe('Login with provided credential' , function(){
-  			it('should save cookie', function(done){
+
+  			it('should reject bad credential', function(done){
+	  			var postdata = {};
+	  			//construct the post data from config
+	  			for(var i in global.test.login.fields){
+	  				var name = global.test.login.fields[i];
+	  				postdata[name] = "x" + config.login_fields_values[name];
+	  			}
+
+	  			global.state_var = "xyz";  //TODO: gen rand string
+
+	  			//perform a login
+
+				request
+					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
+				    .type('form') 
+					.set('User-Agent',test_options.user_agent)
+				    .redirects(0)
+					.send(postdata)
+					.end(function(err, res){
+						should.not.exist(err, res.text);
+						//TODO: check that it rejects (somehow?)
+						done();
+					});
+
+
+	  		});
+
+  			it('should accept correct credential', function(done){
 	  			var postdata = {};
 	  			//construct the post data from config
 	  			for(var i in global.test.login.fields){
@@ -159,7 +215,7 @@ describe('Obtaining a token in code flow', function(){
 
 	  		});
 
-	  		it('should authorize', function(done){
+	  		it('should accept credential', function(done){
 	  			var parameters = {
 					    	"response_type" : "code",
 					    	"client_id": config.gold_client.client_id,
@@ -262,8 +318,71 @@ describe('Obtaining a token in code flow', function(){
 
   		});
 
+  	
+
+		it('should NOT exchange access code for bad request parameters', function(done){
+  			//try wrong parameter
+			var post_param = {
+				"grant_type": "authorization_code",
+				"code": global.test.access_code + "x",
+				"redirect_uri": config.gold_client.redirect_uri,
+				"client_id": config.gold_client.client_id,
+				"client_secret": secret
+			}
+			var proto = JSON.stringify(post_param);
+
+			var toggles = [ ]
+
+			for(var p = 0; p < 32 ; p++){
+				//get bit representation of p
+				var bitstr = p.toString(2);
+				//00001 means we will manipulate (invalidate) `client_secret` parameter
+				//00010 means we will manipulate `client_id` .etc
+				var bad_param = JSON.parse(proto);
+				for(var i = 0; i < bitstr.length; i++){
+					if(bitstr[i] == "1"){
+						//manipulate ith parameter of post_param
+						var key = Object.keys(post_param)[i];
+						bad_param[key] = "BAD1BAD" + bitstr;
+					}
+				}
+				toggles.push(bad_param);
+			}
+
+			var recurse = function(f){
+				// If we have tested all possible
+				// combination of bad request parameter
+				// trigger done callback
+
+				if(toggles.length == 0){
+					done();
+					return;
+				}
+				f();
+			}
+
+			var post_to = utils.getRelativePath(config.uri, token_endpoint);
+
+			var mkrequest = function(){
+				request
+					.post(post_to)
+					.type('form') 
+					.set('User-Agent', test_options.user_agent)
+					.send(toggles.pop())
+					.expect(200)
+					.end(function(err, res){
+			      		should.exist(err, res.text);
+			      		recurse(mkrequest);
+					});
+			}
+
+			mkrequest();
+			
+  		});
+
+
+
   		it('should exchange access code for a token', function(done){
-  			console.log(secret);
 			var post_param = {
 				"grant_type": "authorization_code",
 				"code": global.test.access_code,
@@ -285,6 +404,31 @@ describe('Obtaining a token in code flow', function(){
 					done();
 				});
   		});
+
+
+  		it('should not exchange access code for a USED token', function(done){
+			var post_param = {
+				"grant_type": "authorization_code",
+				"code": global.test.access_code,
+				"redirect_uri": config.gold_client.redirect_uri,
+				"client_id": config.gold_client.client_id,
+				"client_secret": secret
+			}
+
+			var post_to = utils.getRelativePath(config.uri, token_endpoint);
+
+			request
+				.post(post_to)
+				.type('form') 
+				.set('User-Agent', test_options.user_agent)
+				.send(post_param)
+				.expect(200)
+				.end(function(err, res){
+		      		should.exist(err, res.text);
+					done();
+				});
+  		});
+
 
   		it('should verify that token is valid', function(done){
   			global.test.token_response.should.have.property('access_token');
