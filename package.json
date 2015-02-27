@@ -14,10 +14,15 @@
     "superagent": "^0.21.0"
   },
   "devDependencies": {
-    "mocha": "*" 
-  }, 
+    "mocha": "*",
+    "jshint": "~2.6.1",
+    "jshint-stylish": "~1.0.1",
+    "jscs": "~1.11.3"
+  },
   "scripts": {
-    "test": "bash test"
+    "test": "bash test",
+    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
+    "style": "jscs ."
   },
   "repository": {
     "type": "git",
