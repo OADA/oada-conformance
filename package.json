@@ -22,7 +22,7 @@
   "scripts": {
     "test": "bash test",
     "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
-	"style": "jscs ."
+    "style": "jscs ."
   },
   "repository": {
     "type": "git",
