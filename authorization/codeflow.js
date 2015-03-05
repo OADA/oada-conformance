@@ -1,5 +1,7 @@
 /*
-*  Tests ability to get token in OAuth 2 code flow
+*  OAuth 2.0 Code Flow
+*  Tests ability to get access token 
+*  Tests ability to get ID token
 *
 */
 var request = require('supertest');
@@ -244,7 +246,7 @@ describe('Obtaining a token in code flow', function(){
   });
 
   
-  describe('Obtaining Token (Code Flow)', function(){
+  describe('Obtaining Access Token', function(){
   		var cert;
   		var secret;
   		var token_endpoint;
@@ -292,6 +294,10 @@ describe('Obtaining a token in code flow', function(){
   		 	done();
   		});
 
+  });
+
+  describe('Obtaining ID Token', function(){
+	
   });
 
 });
