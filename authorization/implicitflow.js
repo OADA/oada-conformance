@@ -1,5 +1,7 @@
 /*
-*  Tests ability to get token in OAuth 2 implicity grant flow
+*  OAuth 2.0 Implicit Flow
+*  Tests ability to get access token 
+*  Tests ability to get ID token
 *
 */
 var request = require('supertest');
@@ -184,7 +186,7 @@ describe('Obtaining token (implicit flow)', function(){
 });
 
 
- describe('Grant Screen', function(){
+describe('Grant Screen and Obtaining access token', function(){
   		var $;
   		before(function(){
   			$ = cheerio.load(global.test.grantscreen.html);
@@ -201,7 +203,7 @@ describe('Obtaining token (implicit flow)', function(){
   		 	done();
   		});
 
-  		it('should get access code', function(done){
+  		it('should get access token', function(done){
   			//steal access code from query string
 
   			var data = {};
@@ -235,5 +237,42 @@ describe('Obtaining token (implicit flow)', function(){
   		 	
   		});
 
-  });
+});
 
+describe('Obtaining ID Token', function(){
+
+		//user is authorized already
+		//Get identity provider's /.well-known/openid-configuration
+		//Location: https://URL.com/authorize?response_type=id_token%20token&
+		//client_id=s6BhdRkqt3%40agidentity.com&redirect_uri=https%3A%2F%2Fapi.agcloud.com%2Fcb
+		//&scope=openid%20profile&state=af0ifjsldkj&nonce=n-0S6_WzA2Mj HTTP/1.1
+	    it('should authorize', function(done){
+	    		var nonce = 0;
+	  			var parameters = {
+					    	"response_type" : "id_token",
+					    	"client_id": config.gold_client.client_id,
+					    	"state" : global.state_var,
+					    	"nonce" : nonce,
+					    	"redirect_uri": config.gold_client.redirect_uri,
+					    	"scope": "openid.profile"
+				}
+			    //not sure which endpoint should this be
+			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
+			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
+
+			    var req = request
+			    		.get(auth_url)
+			    		.set('User-Agent',test_options.user_agent)
+			    		.type('form');
+
+			    req.expect(200).end(function(err,res){
+			    		should.not.exist(err, res.text);
+			    		global.test["grantscreen"] = {"html": ""}
+			    		global.test.grantscreen.html = res.text;
+			    		done();
+			    });
+	  		});
+  		})
+
+		
+});

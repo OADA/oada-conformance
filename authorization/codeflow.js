@@ -441,7 +441,10 @@ describe('Obtaining a token in code flow', function(){
   });
 
   describe('Obtaining ID Token', function(){
-	
+		//Get app /.well-known/oada-configuration
+		// user is authorized already
+		//Get identity provider's /.well-known/openid-configuration
+		
   });
 
 });
