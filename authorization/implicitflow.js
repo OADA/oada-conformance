@@ -1,6 +1,6 @@
 /*
 *  OAuth 2.0 Implicit Flow
-*  Tests ability to get access token 
+*  Tests ability to get access token
 *  Tests ability to get ID token
 *
 */
@@ -41,7 +41,7 @@ describe('Check Pre-requisites', function(){
 	      .end(function(err,res){
 	      	should.not.exist(err);
 	      	//Make sure it matches the prescribed format
-	      	assert.jsonSchema(JSON.parse(res.text), 
+	      	assert.jsonSchema(JSON.parse(res.text),
 	      					  require("./schema/oada_configuration.json"));
 	      	//save the config doc for later use
 	      	global.test["oada_configuration"] = JSON.parse(res.text);
@@ -86,13 +86,13 @@ describe('Obtaining token (implicit flow)', function(){
 	  	});
 
 	  	it('has a login dialog that can be automated', function(done){
-	  		// bring up the "login" dialog 
+	  		// bring up the "login" dialog
 		    // and parse its form format
 
 		    var login_uri = global.test.oada_configuration.authorization_endpoint;
 		    var path = utils.getRelativePath(config.uri,login_uri);
 
-		    /* It may or may not redirect us. 
+		    /* It may or may not redirect us.
 		     1. if it redirects (302)
 		       - assume the final redirected page is the login dialog
 		     2. if it does not redirect
@@ -113,7 +113,7 @@ describe('Obtaining token (implicit flow)', function(){
 
 				//Make sure that this login form is doing POST
 				assert.equal(form_method.toLowerCase(), "post");
-				
+
 				global.test.login["fields"] = []
 				$("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
 					global.test.login["fields"].push($(this).attr("name"));
@@ -142,7 +142,7 @@ describe('Obtaining token (implicit flow)', function(){
 
 				request
 					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
-				    .type('form') 
+				    .type('form')
 					.set('User-Agent',test_options.user_agent)
 				    .redirects(0)
 					.send(postdata)
@@ -162,7 +162,7 @@ describe('Obtaining token (implicit flow)', function(){
 					    	"redirect_uri": config.gold_client.redirect_uri,
 					    	"scope": "bookmarks.fields"
 				}
-			    
+
 			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
 			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
 
@@ -181,7 +181,7 @@ describe('Obtaining token (implicit flow)', function(){
   		})
 
   });
-	
+
 
 });
 
@@ -193,7 +193,7 @@ describe('Grant Screen and Obtaining access token', function(){
   		});
 
   		it('should correctly displays all requested scopes', function(done){
-  			
+
   			//How should we decide whether all scopes are displayed
   			done();
   		});
@@ -218,7 +218,7 @@ describe('Grant Screen and Obtaining access token', function(){
 			request
 				.post(post_url)
 				.set('User-Agent',test_options.user_agent)
-				.type('form') 
+				.type('form')
 				.send(data)
 				.redirects(0)
 				.expect(302)
@@ -234,28 +234,24 @@ describe('Grant Screen and Obtaining access token', function(){
 					done();
 				});
 
-  		 	
+
   		});
 
 });
 
+/*
+*  I feel this is not right..
+*/
 describe('Obtaining ID Token', function(){
 
-		//user is authorized already
-		//Get identity provider's /.well-known/openid-configuration
-		//Location: https://URL.com/authorize?response_type=id_token%20token&
-		//client_id=s6BhdRkqt3%40agidentity.com&redirect_uri=https%3A%2F%2Fapi.agcloud.com%2Fcb
-		//&scope=openid%20profile&state=af0ifjsldkj&nonce=n-0S6_WzA2Mj HTTP/1.1
 	    it('should authorize', function(done){
-	    		var nonce = 0;
-	  			var parameters = {
-					    	"response_type" : "id_token",
-					    	"client_id": config.gold_client.client_id,
-					    	"state" : global.state_var,
-					    	"nonce" : nonce,
-					    	"redirect_uri": config.gold_client.redirect_uri,
-					    	"scope": "openid.profile"
-				}
+                var parameters = {
+                    "response_type" : "id_token",
+                    "client_id": config.gold_client.client_id,
+                    "state" : "xyz",
+                    "redirect_uri": config.gold_client.redirect_uri,
+                    "scope": "openid.profile"
+                }
 			    //not sure which endpoint should this be
 			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
 			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
@@ -267,12 +263,52 @@ describe('Obtaining ID Token', function(){
 
 			    req.expect(200).end(function(err,res){
 			    		should.not.exist(err, res.text);
-			    		global.test["grantscreen"] = {"html": ""}
-			    		global.test.grantscreen.html = res.text;
+                        global.test["grantscreen"] = {"html": ""}
+                        global.test.grantscreen.html = res.text;
 			    		done();
 			    });
-	  		});
-  		})
+	    });
 
-		
+
+});
+
+describe('Obtain ID token', function(){
+        var $;
+        before(function(){
+            $ = cheerio.load(global.test.grantscreen.html);
+        });
+
+        it('should get access token', function(done){
+
+            var data = {};
+
+            $("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
+                data[$(this).attr("name")] = $(this).attr("value");
+            });
+
+            var form_action = $("form").attr("action");
+            var post_url = utils.getRelativePath(config.uri, form_action);
+
+            request
+                .post(post_url)
+                .set('User-Agent',test_options.user_agent)
+                .type('form')
+                .send(data)
+                .redirects(0)
+                .expect(302)
+                .end(function(err, res){
+                    should.not.exist(err, res.text);
+                    //intercept the redirection
+                    var intercepted_redir = utils.getQueryParameters(res.headers.location);
+                    intercepted_redir.should.have.property('id_token');
+                    global.test.id_token = intercepted_redir.id_token;
+                    // //make sure states are equal
+                    assert.equal(global.state_var, intercepted_redir.state);
+                    console.log(global.test.id_token) //looks like its encrypted in JWT/JWS form?
+                    done();
+                });
+
+
+        });
+
 });
