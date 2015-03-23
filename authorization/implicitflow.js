@@ -16,7 +16,7 @@ var jws = require('jws-jwk').shim();
 var utils = require('../utils.js');
 
 var config = require('../config.js').authorization;
-var test_options = require('../config.js').options;
+var testOptions = require('../config.js').options;
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
@@ -45,10 +45,26 @@ describe('Check Pre-requisites', function(){
 	      					  require("./schema/oada_configuration.json"));
 	      	//save the config doc for later use
 	      	global.test["oada_configuration"] = JSON.parse(res.text);
-
 	      	done();
 	      });
 	  });
+
+      it('should respond with openid-configuration document', function(done){
+        request
+          .get('/.well-known/openid-configuration')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .end(function(err,res){
+            should.not.exist(err);
+            // //Make sure it matches the prescribed format
+            // assert.jsonSchema(JSON.parse(res.text),
+            //                   require("./schema/oada_configuration.json"));
+            //save the config doc for later use
+            global.test["openid-configuration"] = JSON.parse(res.text);
+            done();
+          });
+      });
 
 	});
 
@@ -143,7 +159,7 @@ describe('Obtaining token (implicit flow)', function(){
 				request
 					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
 				    .type('form')
-					.set('User-Agent',test_options.user_agent)
+					.set('User-Agent',testOptions.user_agent)
 				    .redirects(0)
 					.send(postdata)
 					.end(function(err, res){
@@ -166,9 +182,10 @@ describe('Obtaining token (implicit flow)', function(){
 			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
 			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
 
+
 			    var req = request
 			    		.get(auth_url)
-			    		.set('User-Agent',test_options.user_agent)
+			    		.set('User-Agent',testOptions.user_agent)
 			    		.type('form');
 
 			    req.expect(200).end(function(err,res){
@@ -217,7 +234,7 @@ describe('Grant Screen and Obtaining access token', function(){
 
 			request
 				.post(post_url)
-				.set('User-Agent',test_options.user_agent)
+				.set('User-Agent',testOptions.user_agent)
 				.type('form')
 				.send(data)
 				.redirects(0)
@@ -240,11 +257,14 @@ describe('Grant Screen and Obtaining access token', function(){
 });
 
 /*
-*  I feel this is not right..
+*  TODO: should also test that
+*  OAuth in OAuth in OAuth thing
 */
-describe('Obtaining ID Token', function(){
 
-	    it('should authorize', function(done){
+describe('Obtain ID token', function(){
+        var $;
+
+        it('should authorize', function(done){
                 var parameters = {
                     "response_type" : "id_token",
                     "client_id": config.gold_client.client_id,
@@ -252,33 +272,23 @@ describe('Obtaining ID Token', function(){
                     "redirect_uri": config.gold_client.redirect_uri,
                     "scope": "openid.profile"
                 }
-			    //not sure which endpoint should this be
-			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
-			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
+                //not sure which endpoint should this be
+                var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
+                    auth_url += "/" + "?" + utils.getQueryString(parameters);
 
-			    var req = request
-			    		.get(auth_url)
-			    		.set('User-Agent',test_options.user_agent)
-			    		.type('form');
+                var req = request
+                        .get(auth_url)
+                        .set('User-Agent',testOptions.user_agent)
+                        .type('form');
 
-			    req.expect(200).end(function(err,res){
-			    		should.not.exist(err, res.text);
-                        global.test["grantscreen"] = {"html": ""}
-                        global.test.grantscreen.html = res.text;
-			    		done();
-			    });
-	    });
-
-
-});
-
-describe('Obtain ID token', function(){
-        var $;
-        before(function(){
-            $ = cheerio.load(global.test.grantscreen.html);
+                req.expect(200).end(function(err,res){
+                        should.not.exist(err, res.text);
+                        $ = cheerio.load(res.text);
+                        done();
+                });
         });
 
-        it('should get access token', function(done){
+        it('should get id token', function(done){
 
             var data = {};
 
@@ -291,7 +301,7 @@ describe('Obtain ID token', function(){
 
             request
                 .post(post_url)
-                .set('User-Agent',test_options.user_agent)
+                .set('User-Agent',testOptions.user_agent)
                 .type('form')
                 .send(data)
                 .redirects(0)
@@ -304,11 +314,33 @@ describe('Obtain ID token', function(){
                     global.test.id_token = intercepted_redir.id_token;
                     // //make sure states are equal
                     assert.equal(global.state_var, intercepted_redir.state);
+
                     console.log(global.test.id_token) //looks like its encrypted in JWT/JWS form?
                     done();
                 });
 
 
         });
+
+});
+
+
+describe('Get User Info', function(){
+
+    it('should not authorize', function(done){
+                //not sure which endpoint should this be
+                var user_url = utils.getRelativePath(config.uri, global.test["openid-configuration"].userinfo_endpoint);
+
+                var req = request
+                        .get(user_url)
+                        .set('User-Agent',testOptions.user_agent)
+                        .type('form');
+
+                req.expect(200).end(function(err,res){
+                        should.exist(err, res.text);
+                        done();
+                });
+    });
+
 
 });

@@ -19,7 +19,7 @@ var OADA_PROVIDER = "https://provider.oada-dev.com";
 
 //this will cause server to look  up  at
 //identity.oada-dev need to generate .pem for localhost
-var CLIENT_ID = "389kxhcnjmashlsxd8@identity.oada-dev.com"; 
+var CLIENT_ID = "389kxhcnjmashlsxd8@identity.oada-dev.com";
 
 var CLIENT_KEY_ID = "xkja3u7ndod83jxnzhs6";
 var CLIENT_REDIR_URL = "https://example.org/redirect";
@@ -64,14 +64,14 @@ function init(cb){
 					console.error(e)
 					throw "clientDiscovery document cannot be parsed"
 				}
-				
+
 			})
 		}catch(ex){
 			console.log(ex)
 			throw ".well-known document cannot be parsed"
 		}
 	});
-	
+
 }
 
 function determineURL(current_url, form_action){
@@ -92,7 +92,7 @@ function tryLogin(){
 
 	agent
 	.post(fullurl)
-    .type('form') 
+    .type('form')
     .set('User-Agent','Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0')
 	.send({username: "frank", password: "pass"})
 	.end(didLogin);
@@ -101,11 +101,11 @@ function tryLogin(){
 function getAccessCode(){
 	var auth_base = wellknown_doc["authorization_endpoint"];
     var param = {
-    	"response_type" : "code",
+    	"response_type" : "id_token",
     	"client_id": CLIENT_ID,
     	"state" : "xyz",
     	"redirect_uri": CLIENT_REDIR_URL,
-    	"scope": "bookmarks.fields"
+    	"scope": "openid.profile"
     }
     var auth_url = auth_base + "/" + "?" + utils.joinparam(param);
     // console.log(auth_url);
@@ -115,7 +115,7 @@ function getAccessCode(){
    	// req.end(didGetAccessCode);
    	agent
    	.get(auth_url)
-    .type('form') 
+    .type('form')
    	.end(didGetGrantScreen);
 }
 
@@ -141,10 +141,10 @@ function didGetGrantScreen(err, res){
 		data[$(this).attr("name")] = $(this).attr("value");
 	});
 	console.log(data);
-	
+
 	agent
 	.post(post_url)
-        .type('form') 
+        .type('form')
         .set('User-Agent','Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0')
  	.send(data)
 	.end(didGrantPermission);
@@ -185,8 +185,8 @@ function generateClientSecret(key, issuer, audience, accessCode){
 }
 
 /**
-*  exchange code for token, 
-*  - make request to token endpoint 
+*  exchange code for token,
+*  - make request to token endpoint
 */
 function getTokenWithCode(ac){
 	var token_endpoint = wellknown_doc["token_endpoint"];
@@ -213,7 +213,7 @@ function getTokenWithCode(ac){
 
 	agent
 	.post(token_endpoint)
-    .type('form') 
+    .type('form')
      .set('User-Agent','Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0')
  	.send(post_param)
 	.end(didGetToken);
