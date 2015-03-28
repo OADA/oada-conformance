@@ -18,9 +18,9 @@ var testOptions = require('../config.js').options;
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
-var global = {
-	test : {}
-};
+var state = {
+    test : {}
+    };
 
 var request = request.agent(config.uri);
 
@@ -30,7 +30,7 @@ var request = request.agent(config.uri);
 describe('Check Pre-requisites', function(){
 	describe('Exists .well_known/oada-configuration', function(){
 	  before(function (){
-	    global.test['well_known'] = {};
+	    state.test['well_known'] = {};
 	  });
 
 	  it('should respond with oada-configuration document', function(done){
@@ -45,7 +45,7 @@ describe('Check Pre-requisites', function(){
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      					  require('./schema/oada_configuration.json'));
 	      	//save the config doc for later use
-	      	global.test['oada_configuration'] = JSON.parse(res.text);
+	      	state.test['oadaConfiguration'] = JSON.parse(res.text);
 
 	      	done();
 	      });
@@ -68,7 +68,7 @@ describe('Check Pre-requisites', function(){
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      				      require('./schema/oada_client_discovery.json'));
 
-	      	global.test['oada_client_discovery'] = JSON.parse(res.text);
+	      	state.test['oada_client_discovery'] = JSON.parse(res.text);
 
 	      	done();
 	      });
@@ -77,26 +77,18 @@ describe('Check Pre-requisites', function(){
 	});
 });
 
-
-/**
-*
-*  Part 2 - try getting the token
-*
+/*
+ * Test begins after this point
 */
 
+describe('access token in code flow', function(){
+  describe('login dialog', function(){
+	  	it('can login', function(done){
 
-describe('Obtaining a token in code flow', function(){
-  describe('Logging in', function(){
-  	    before(function (){
-	    	//TODO: clear cookies
+		    var loginURI = state.
+                            test.
+                            oadaConfiguration['authorization_endpoint'];
 
-	  	});
-
-	  	it('has a login dialog that can be automated', function(done){
-	  		// bring up the 'login' dialog
-		    // and parse its form format
-
-		    var loginURI = global.test.oada_configuration.authorization_endpoint;
 		    var path = utils.getRelativePath(config.uri,loginURI);
 
 		    /* It may or may not redirect us.
@@ -111,9 +103,9 @@ describe('Obtaining a token in code flow', function(){
 		      .redirects(10)
 		      .end(function(err,res){
 		      	should.not.exist(err,res.text);
-		      	global.test['login'] = {};
+		      	state.test['login'] = {};
 		      	var currentURI = config.uri + res.req.path;
-		      	$ = cheerio.load(res.text);
+		      	var $ = cheerio.load(res.text);
 		      	//find out form action
 				var formAction = $('form').attr('action');
 				var formMethod = $('form').attr('method');
@@ -121,64 +113,40 @@ describe('Obtaining a token in code flow', function(){
 				//Make sure that this login form is doing POST
 				assert.equal(formMethod.toLowerCase(), 'post');
 
-				global.test.login['fields'] = []
-				$('form input[type=text], input[type=password], input[type=hidden], textarea').each(function(m,t){
-					global.test.login['fields'].push($(this).attr('name'));
+				state.test.login['fields'] = [];
+				$('form input[type=text],' +
+                    'input[type=password],' +
+                    ' input[type=hidden], textarea'
+                  ).each(function(){
+
+					state.test.login['fields'].push($(this).attr('name'));
 				});
 
-				global.test.login['action'] = utils.getAbsoluteURI(config.uri,
+				state.test.login['action'] = utils.getAbsoluteURI(config.uri,
                     currentURI,
                     formAction);
 		      	done();
 		    });
 	  	});
 
-
-
-  		// describe('Login with fake credential' , function(){
-  		// 	it('should reject', function(done){
-	  	// 		var postdata = {};
-	  	// 		//construct the post data from config
-	  	// 		for(var i in global.test.login.fields){
-	  	// 			var name = global.test.login.fields[i];
-	  	// 			postdata[name] = config.loginFieldsValue[name] + '@';
-	  	// 		}
-
-	  	// 		global.stateVariable = 'xyz';  //TODO: gen rand string
-
-	  	// 		//perform a login
-
-				// request
-				// 	.post(utils.getRelativePath(config.uri, global.test.login['action']))
-				//     .type('form')
-				// 	.set('User-Agent',testOptions.userAgentValue)
-				//     .redirects(0)
-				// 	.send(postdata)
-				// 	.end(function(err, res){
-				// 		should.not.exist(err, res.text);
-				// 		done();
-				// 	});
-
-
-	  	// });
-
-
   		describe('Login with provided credential' , function(){
 
   			it('should reject bad credential', function(done){
 	  			var postdata = {};
 	  			//construct the post data from config
-	  			for(var i in global.test.login.fields){
-	  				var name = global.test.login.fields[i];
-	  				postdata[name] = 'x' + config.loginFieldsValue[name];
+	  			for(var i in state.test.login.fields){
+                    if (state.test.login.fields.hasOwnProperty(i)) {
+    	  				var name = state.test.login.fields[i];
+    	  				postdata[name] = 'x' + config.loginFieldsValue[name];
+                    }
 	  			}
 
-	  			global.stateVariable = 'xyz';  //TODO: gen rand string
+	  			state.stateVariable = 'xyz';  //TODO: gen rand string
 
 	  			//perform a login
-
 				request
-					.post(utils.getRelativePath(config.uri, global.test.login['action']))
+					.post(utils.getRelativePath(config.uri,
+                        state.test.login['action']))
 				    .type('form')
 					.set('User-Agent',testOptions.userAgentValue)
 				    .redirects(0)
@@ -195,19 +163,24 @@ describe('Obtaining a token in code flow', function(){
   			it('should accept correct credential', function(done){
 	  			var postdata = {};
 	  			//construct the post data from config
-	  			for(var i in global.test.login.fields){
-	  				var name = global.test.login.fields[i];
-	  				postdata[name] = config.loginFieldsValue[name];
+	  			for(var i in state.test.login.fields){
+                    if (state.test.login.fields.hasOwnProperty(i)) {
+	  				   var name = state.test.login.fields[i];
+	  				   postdata[name] = config.loginFieldsValue[name];
+                    }
 	  			}
 
-	  			global.stateVariable = 'xyz';  //TODO: gen rand string
+	  			state.stateVariable = 'xyz';  //TODO: gen rand string
 
 	  			//perform a login
 
 				request
-					.post(utils.getRelativePath(config.uri, global.test.login['action']))
+					.post(utils.
+                        getRelativePath(config.uri,
+                            state.test.login['action']))
 				    .type('form')
-					.set('User-Agent',testOptions.userAgentValue)
+					.set('User-Agent',
+                        testOptions.userAgentValue)
 				    .redirects(0)
 					.send(postdata)
 					.end(function(err, res){
@@ -221,29 +194,31 @@ describe('Obtaining a token in code flow', function(){
 	  		it('should accept credential', function(done){
 	  			var parameters = {
 					    	'response_type' : 'code',
-					    	'client_id': config.gold_client.client_id,
-					    	'state' : global.stateVariable,
-					    	'redirect_uri': config.gold_client.redirect_uri,
+					    	'client_id': config.goldClient['client_id'],
+					    	'state' : state.stateVariable,
+					    	'redirect_uri': config.goldClient['redirect_uri'],
 					    	'scope': 'bookmarks.fields openid'
-				}
+				};
 
-			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration['authorization_endpoint']);
-			    	auth_url += '/' + '?' + utils.getQueryString(parameters);
+			    var aurl = utils.
+                    getRelativePath(config.uri,
+                    state.test.oadaConfiguration['authorization_endpoint']);
+			    	aurl += '/' + '?' + utils.getQueryString(parameters);
 
 			    var req = request
-			    		.get(auth_url)
+			    		.get(aurl)
 			    		.set('User-Agent',testOptions.userAgentValue)
 			    		.type('form');
 
 			    req.expect(200)
 			        .end(function(err,res){
 			    		should.not.exist(err, res.text);
-			    		global.test['grantscreen'] = {'html': ''}
-			    		global.test.grantscreen.html = res.text;
+			    		state.test['grantscreen'] = {'html': ''}
+			    		state.test.grantscreen.html = res.text;
 			    		done();
 			    	});
 	  		});
-  		})
+  		});
 
 
 
@@ -252,7 +227,7 @@ describe('Obtaining a token in code flow', function(){
   describe('Grant Screen', function(){
   		var $;
   		before(function(){
-  			$ = cheerio.load(global.test.grantscreen.html);
+  			$ = cheerio.load(state.test.grantscreen.html);
   		});
 
   		it('should correctly displays all requested scopes', function(done){
@@ -261,25 +236,23 @@ describe('Obtaining a token in code flow', function(){
   			done();
   		});
 
-  		it('should correctly displays trust level', function(done){
-
-  		 	done();
-  		});
-
-  		it('should send access code to client when all permissions are granted', function(done){
+  		it('should receive access code from server', function(done){
   			//steal access code from query string
 
   			var data = {};
 
-  			$('form input[type=text], input[type=password], input[type=hidden], textarea').each(function(m,t){
+  			$('form input[type=text],' +
+                'input[type=password],' +
+                'input[type=hidden],' +
+                ' textarea').each(function(){
 				data[$(this).attr('name')] = $(this).attr('value');
 			});
 
 			var formAction = $('form').attr('action');
-			var post_url = utils.getRelativePath(config.uri, formAction);
+			var postURL = utils.getRelativePath(config.uri, formAction);
 
 			request
-				.post(post_url)
+				.post(postURL)
 				.set('User-Agent',testOptions.userAgentValue)
 				.type('form')
 				.send(data)
@@ -288,11 +261,11 @@ describe('Obtaining a token in code flow', function(){
 				.end(function(err, res){
 					should.not.exist(err, res.text);
 					//intercept the redirection
-					var intercepted_redir = utils.getQueryParameters(res.headers.location);
-					intercepted_redir.should.have.property('code');
-					global.test.access_code = intercepted_redir.code;
+					var intercepted = utils.getQueryParameters(res.headers.location);
+					intercepted.should.have.property('code');
+					state.test['access_code'] = intercepted.code;
 					//make sure states are equal
-					assert.equal(global.stateVariable, intercepted_redir.state);
+					assert.equal(state.stateVariable, intercepted.state);
 
 					done();
 				});
@@ -306,17 +279,17 @@ describe('Obtaining a token in code flow', function(){
   describe('Obtaining Access Token', function(){
   		var cert;
   		var secret;
-  		var token_endpoint;
+  		var tokenEndpoint;
 
   		before(function(){
-  			token_endpoint = global.test.oada_configuration.token_endpoint;
+  			tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
   			cert = fs.readFileSync('certs/private.pem');
   			secret = utils.generateClientSecret(
 				cert,
-				config.gold_client.client_id,
-				token_endpoint,
-				global.test.access_code,
-				config.gold_client.key_id
+				config.goldClient['client_id'],
+				tokenEndpoint,
+				state.test['access_code'],
+				config.goldClient['key_id']
 			);
 
   		});
@@ -325,31 +298,31 @@ describe('Obtaining a token in code flow', function(){
 
 		it('should NOT exchange access code for bad request parameters', function(done){
   			//try wrong parameter
-			var post_param = {
+			var parameters = {
 				'grant_type': 'authorization_code',
-				'code': global.test.access_code + 'x',
-				'redirect_uri': config.gold_client.redirect_uri,
-				'client_id': config.gold_client.client_id,
+				'code': state.test['access_code'] + 'x',
+				'redirect_uri': config.goldClient['redirect_uri'],
+				'client_id': config.goldClient['client_id'],
 				'client_secret': secret
-			}
-			var proto = JSON.stringify(post_param);
+			};
 
-			var toggles = [ ]
+			var proto = JSON.stringify(parameters);
+			var toggles = [ ];
 
 			for(var p = 0; p < 32 ; p++){
 				//get bit representation of p
 				var bitstr = p.toString(2);
 				//00001 means we will manipulate (invalidate) `client_secret` parameter
 				//00010 means we will manipulate `client_id` .etc
-				var bad_param = JSON.parse(proto);
+				var badParams = JSON.parse(proto);
 				for(var i = 0; i < bitstr.length; i++){
-					if(bitstr[i] == '1'){
-						//manipulate ith parameter of post_param
-						var key = Object.keys(post_param)[i];
-						bad_param[key] = 'BAD1BAD' + bitstr;
+					if(bitstr[i] === '1'){
+						//manipulate ith parameter of parameters
+						var key = Object.keys(parameters)[i];
+						badParams[key] = 'BAD1BAD' + bitstr;
 					}
 				}
-				toggles.push(bad_param);
+				toggles.push(badParams);
 			}
 
 			var recurse = function(f){
@@ -357,18 +330,18 @@ describe('Obtaining a token in code flow', function(){
 				// combination of bad request parameter
 				// trigger done callback
 
-				if(toggles.length == 0){
+				if(toggles.length === 0){
 					done();
 					return;
 				}
 				f();
-			}
+			};
 
-			var post_to = utils.getRelativePath(config.uri, token_endpoint);
+			var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
 			var mkrequest = function(){
 				request
-					.post(post_to)
+					.post(postURL)
 					.type('form')
 					.set('User-Agent', testOptions.userAgentValue)
 					.send(toggles.pop())
@@ -377,30 +350,28 @@ describe('Obtaining a token in code flow', function(){
 			      		should.exist(err, res.text);
 			      		recurse(mkrequest);
 					});
-			}
+			};
 
 			mkrequest();
 
   		});
 
-
-
-        it('should not exchange access code for a wrong client ID', function(done){
-            var post_param = {
+        it('should reject bad clientID', function(done){
+            var parameters = {
                 'grant_type': 'authorization_code',
-                'code': global.test.access_code,
-                'redirect_uri': config.gold_client.redirect_uri,
+                'code': state.test['access_code'],
+                'redirect_uri': config.goldClient['redirect_uri'],
                 'client_id': 'bad@example.com',
                 'client_secret': secret
-            }
+            };
 
-            var post_to = utils.getRelativePath(config.uri, token_endpoint);
+            var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
             request
-                .post(post_to)
+                .post(postURL)
                 .type('form')
                 .set('User-Agent', testOptions.userAgentValue)
-                .send(post_param)
+                .send(parameters)
                 .expect(200)
                 .end(function(err, res){
                     should.exist(err, res.text);
@@ -409,45 +380,45 @@ describe('Obtaining a token in code flow', function(){
         });
 
   		it('should exchange access code for a token', function(done){
-			var post_param = {
+			var parameters = {
 				'grant_type': 'authorization_code',
-				'code': global.test.access_code,
-				'redirect_uri': config.gold_client.redirect_uri,
-				'client_id': config.gold_client.client_id,
+				'code': state.test['access_code'],
+				'redirect_uri': config.goldClient['redirect_uri'],
+				'client_id': config.goldClient['client_id'],
 				'client_secret': secret
-			}
+			};
 
-			var post_to = utils.getRelativePath(config.uri, token_endpoint);
+			var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 			request
-				.post(post_to)
+				.post(postURL)
 				.type('form')
 				.set('User-Agent', testOptions.userAgentValue)
-				.send(post_param)
+				.send(parameters)
 				.expect(200)
 				.end(function(err, res){
 		      		should.not.exist(err, res.text);
-		      		global.test.token_response = JSON.parse(res.text);
+		      		state.test.tokenResponse = JSON.parse(res.text);
 					done();
 				});
   		});
 
 
   		it('should not exchange access code for a USED token', function(done){
-			var post_param = {
+			var parameters = {
 				'grant_type': 'authorization_code',
-				'code': global.test.access_code,
-				'redirect_uri': config.gold_client.redirect_uri,
-				'client_id': config.gold_client.client_id,
+				'code': state.test['access_code'],
+				'redirect_uri': config.goldClient['redirect_uri'],
+				'client_id': config.goldClient['client_id'],
 				'client_secret': secret
-			}
+			};
 
-			var post_to = utils.getRelativePath(config.uri, token_endpoint);
+			var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
 			request
-				.post(post_to)
+				.post(postURL)
 				.type('form')
 				.set('User-Agent', testOptions.userAgentValue)
-				.send(post_param)
+				.send(parameters)
 				.expect(200)
 				.end(function(err, res){
 		      		should.exist(err, res.text);
@@ -458,20 +429,23 @@ describe('Obtaining a token in code flow', function(){
 
 
   		it('should verify that token is valid', function(done){
-            console.log(global.test.token_response);
-  			global.test.token_response.should.have.property('access_token');
-  			global.test.token_response.should.have.property('expires_in');
+            console.log(state.test.tokenResponse);
+  			state.test.tokenResponse.should.have.property('access_token');
+  			state.test.tokenResponse.should.have.property('expires_in');
   		 	done();
   		});
 
   });
 
-  describe('Obtaining ID Token', function(){
-		//Get app /.well-known/oada-configuration
-		// user is authorized already
-		//Get identity provider's /.well-known/openid-configuration
-
-  });
-
 });
 
+
+describe('Obtaining ID Token', function(){
+        //Get app /.well-known/oada-configuration
+        //user is authorized already
+        //Get identity provider's /.well-known/openid-configuration
+});
+
+describe('Test logout', function(){
+
+});

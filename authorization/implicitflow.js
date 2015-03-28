@@ -44,7 +44,7 @@ describe('Check Pre-requisites', function(){
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      					  require("./schema/oada_configuration.json"));
 	      	//save the config doc for later use
-	      	global.test["oada_configuration"] = JSON.parse(res.text);
+	      	global.test["oadaConfiguration"] = JSON.parse(res.text);
 	      	done();
 	      });
 	  });
@@ -59,7 +59,7 @@ describe('Check Pre-requisites', function(){
             should.not.exist(err);
             // //Make sure it matches the prescribed format
             // assert.jsonSchema(JSON.parse(res.text),
-            //                   require("./schema/oada_configuration.json"));
+            //                   require("./schema/oadaConfiguration.json"));
             //save the config doc for later use
             global.test["openid-configuration"] = JSON.parse(res.text);
             done();
@@ -105,7 +105,7 @@ describe('Obtaining token (implicit flow)', function(){
 	  		// bring up the "login" dialog
 		    // and parse its form format
 
-		    var login_uri = global.test.oada_configuration.authorization_endpoint;
+		    var login_uri = global.test.oadaConfiguration.authorization_endpoint;
 		    var path = utils.getRelativePath(config.uri,login_uri);
 
 		    /* It may or may not redirect us.
@@ -149,7 +149,7 @@ describe('Obtaining token (implicit flow)', function(){
 	  			//construct the post data from config
 	  			for(var i in global.test.login.fields){
 	  				var name = global.test.login.fields[i];
-	  				postdata[name] = config.login_fields_values[name];
+	  				postdata[name] = config.loginFieldsValue[name];
 	  			}
 
 	  			global.state_var = "xyz";  //TODO: gen rand string
@@ -159,7 +159,7 @@ describe('Obtaining token (implicit flow)', function(){
 				request
 					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
 				    .type('form')
-					.set('User-Agent',testOptions.user_agent)
+					.set('User-Agent',testOptions.userAgentValue)
 				    .redirects(0)
 					.send(postdata)
 					.end(function(err, res){
@@ -173,19 +173,19 @@ describe('Obtaining token (implicit flow)', function(){
 	  		it('should authorize', function(done){
 	  			var parameters = {
 					    	"response_type" : "token",
-					    	"client_id": config.gold_client.client_id,
+					    	"client_id": config.goldClient.client_id,
 					    	"state" : global.state_var,
-					    	"redirect_uri": config.gold_client.redirect_uri,
+					    	"redirect_uri": config.goldClient.redirect_uri,
 					    	"scope": "bookmarks.fields"
 				}
 
-			    var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
+			    var auth_url = utils.getRelativePath(config.uri, global.test.oadaConfiguration["authorization_endpoint"]);
 			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
 
 
 			    var req = request
 			    		.get(auth_url)
-			    		.set('User-Agent',testOptions.user_agent)
+			    		.set('User-Agent',testOptions.userAgentValue)
 			    		.type('form');
 
 			    req.expect(200).end(function(err,res){
@@ -234,7 +234,7 @@ describe('Grant Screen and Obtaining access token', function(){
 
 			request
 				.post(post_url)
-				.set('User-Agent',testOptions.user_agent)
+				.set('User-Agent',testOptions.userAgentValue)
 				.type('form')
 				.send(data)
 				.redirects(0)
@@ -267,18 +267,18 @@ describe('Obtain ID token', function(){
         it('should authorize', function(done){
                 var parameters = {
                     "response_type" : "id_token",
-                    "client_id": config.gold_client.client_id,
+                    "client_id": config.goldClient.client_id,
                     "state" : "xyz",
-                    "redirect_uri": config.gold_client.redirect_uri,
+                    "redirect_uri": config.goldClient.redirect_uri,
                     "scope": "openid.profile"
                 }
                 //not sure which endpoint should this be
-                var auth_url = utils.getRelativePath(config.uri, global.test.oada_configuration["authorization_endpoint"]);
+                var auth_url = utils.getRelativePath(config.uri, global.test.oadaConfiguration["authorization_endpoint"]);
                     auth_url += "/" + "?" + utils.getQueryString(parameters);
 
                 var req = request
                         .get(auth_url)
-                        .set('User-Agent',testOptions.user_agent)
+                        .set('User-Agent',testOptions.userAgentValue)
                         .type('form');
 
                 req.expect(200).end(function(err,res){
@@ -301,7 +301,7 @@ describe('Obtain ID token', function(){
 
             request
                 .post(post_url)
-                .set('User-Agent',testOptions.user_agent)
+                .set('User-Agent',testOptions.userAgentValue)
                 .type('form')
                 .send(data)
                 .redirects(0)
@@ -333,7 +333,7 @@ describe('Get User Info', function(){
 
                 var req = request
                         .get(user_url)
-                        .set('User-Agent',testOptions.user_agent)
+                        .set('User-Agent',testOptions.userAgentValue)
                         .type('form');
 
                 req.expect(200).end(function(err,res){
