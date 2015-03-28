@@ -1,5 +1,10 @@
 # OADA OAuth Test
-Automated test for OADA OAuth 2.0 
+Automated tests for OADA API 
 
-Test for OADA OAuth 2.0 compliance. 
-Uses mocha.
+[![Build Status](https://travis-ci.org/OADA/oada-compliance.svg?branch=authorization)](https://travis-ci.org/OADA/oada-ref-auth-js)
+
+### Install mocha
+    npm install -g mocha
+### Running authorization test
+    ./test authorization
+
