@@ -1,7 +1,7 @@
 # OADA OAuth Test
-Automated tests for OADA API 
+Automated tests for OADA API
 
-[![Build Status](https://travis-ci.org/OADA/oada-compliance.svg?branch=authorization)](https://travis-ci.org/OADA/oada-ref-auth-js)
+[![Build Status](https://travis-ci.org/OADA/oada-compliance.svg?branch=authorization)](https://travis-ci.org/OADA/oada-compliance)
 
 ### Install mocha
     npm install -g mocha
