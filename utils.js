@@ -12,7 +12,7 @@ exports.getAbsoluteURI = function(base, scope, relativeURL){
     	url = relativeURL.replace(/^\//, base + '/');
     }
     return url;
-}
+};
 
 /*
 *  get Relative path given full URI
@@ -35,7 +35,9 @@ exports.getRelativePath = function(base, urlstr){
 exports.getQueryString = function(dict){
 	var str = [];
 	for(var key in dict){
-		str.push(key + '=' + encodeURIComponent(dict[key]));
+        if (dict.hasOwnProperty(key)) {
+		  str.push(key + '=' + encodeURIComponent(dict[key]));
+        }
 	}
 	return str.join('&');
 };
@@ -44,8 +46,10 @@ exports.getQueryParameters = function(uristr){
 	var m = uristr.split(/[?|#]/)[1].split('&');
 	var dict = {};
 	for(var i in m){
-		var pair = m[i].split('=');
-		dict[pair[0]] = pair[1];
+        if (m.hasOwnProperty(i)) {
+    		var pair = m[i].split('=');
+    		dict[pair[0]] = pair[1];
+        }
 	}
 	return dict;
 };
@@ -53,7 +57,8 @@ exports.getQueryParameters = function(uristr){
 exports.generateClientSecret = function(key, issuer, audience, accessCode ,kid){
 	var sec = {
 		ac : accessCode
-	}
+	};
+
 	var options = {
 		algorithm: 'RS256',
 		audience: audience,
@@ -61,8 +66,7 @@ exports.generateClientSecret = function(key, issuer, audience, accessCode ,kid){
 		headers: {
 			'kid': kid
 		}
-	}
-
+	};
 
 	return jwt.sign(sec, key, options);
 };

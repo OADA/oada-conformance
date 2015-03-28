@@ -21,7 +21,7 @@
   },
   "scripts": {
     "test": "bash test",
-    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
+    "lint": "node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .",
     "style": "jscs ."
   },
   "repository": {

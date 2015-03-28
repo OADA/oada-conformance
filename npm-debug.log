@@ -7,7 +7,7 @@
 6 info lint oada-compliance@1.0.0
 7 verbose unsafe-perm in lifecycle true
 8 info oada-compliance@1.0.0 Failed to exec lint script
-9 verbose stack Error: oada-compliance@1.0.0 lint: `jshint --reporter node_modules/jshint-stylish/stylish.js .`
+9 verbose stack Error: oada-compliance@1.0.0 lint: `node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .`
 9 verbose stack Exit status 2
 9 verbose stack     at EventEmitter.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/lifecycle.js:213:16)
 9 verbose stack     at EventEmitter.emit (events.js:110:17)
@@ -22,13 +22,13 @@
 14 error node v0.12.0
 15 error npm  v2.5.1
 16 error code ELIFECYCLE
-17 error oada-compliance@1.0.0 lint: `jshint --reporter node_modules/jshint-stylish/stylish.js .`
+17 error oada-compliance@1.0.0 lint: `node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .`
 17 error Exit status 2
-18 error Failed at the oada-compliance@1.0.0 lint script 'jshint --reporter node_modules/jshint-stylish/stylish.js .'.
+18 error Failed at the oada-compliance@1.0.0 lint script 'node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .'.
 18 error This is most likely a problem with the oada-compliance package,
 18 error not with npm itself.
 18 error Tell the author that this fails on your system:
-18 error     jshint --reporter node_modules/jshint-stylish/stylish.js .
+18 error     node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .
 18 error You can get their info via:
 18 error     npm owner ls oada-compliance
 18 error There is likely additional logging output above.

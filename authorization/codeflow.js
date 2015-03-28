@@ -211,7 +211,7 @@ describe('access token in code flow', function(){
 			    req.expect(200)
 			        .end(function(err,res){
 			    		should.not.exist(err, res.text);
-			    		state.test['grantscreen'] = {'html': ''}
+			    		state.test['grantscreen'] = {'html': ''};
 			    		state.test.grantscreen.html = res.text;
 			    		done();
 			    	});
@@ -259,7 +259,8 @@ describe('access token in code flow', function(){
 				.end(function(err, res){
 					should.not.exist(err, res.text);
 					//intercept the redirection
-					var intercepted = utils.getQueryParameters(res.headers.location);
+					var intercepted = utils.
+                                      getQueryParameters(res.headers.location);
 					intercepted.should.have.property('code');
 					state.test['access_code'] = intercepted.code;
 					//make sure states are equal
@@ -274,7 +275,7 @@ describe('access token in code flow', function(){
   });
 
 
-  describe('Obtaining Access Token', function(){
+  describe('Exchanging Access Token', function(){
   		var cert;
   		var secret;
   		var tokenEndpoint;
@@ -294,7 +295,7 @@ describe('access token in code flow', function(){
 
 
 
-		it('should NOT exchange access code for bad request parameters', function(done){
+		it('should reject bad parameters', function(done){
   			//try wrong parameter
 			var parameters = {
 				'grant_type': 'authorization_code',
@@ -310,7 +311,8 @@ describe('access token in code flow', function(){
 			for(var p = 0; p < 32 ; p++){
 				//get bit representation of p
 				var bitstr = p.toString(2);
-				//00001 means we will manipulate (invalidate) `client_secret` parameter
+				//00001 means we will manipulate
+                //   (invalidate) `client_secret` parameter
 				//00010 means we will manipulate `client_id` .etc
 				var badParams = JSON.parse(proto);
 				for(var i = 0; i < bitstr.length; i++){

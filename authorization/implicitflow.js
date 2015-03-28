@@ -110,7 +110,8 @@ describe('Obtaining token (implicit flow)', function(){
 	  		// bring up the 'login' dialog
 		    // and parse its form format
 
-		    var loginURL = state.test.oadaConfiguration['authorization_endpoint'];
+		    var loginURL = state.test.
+                           oadaConfiguration['authorization_endpoint'];
 		    var path = utils.getRelativePath(config.uri,loginURL);
 
 		    /* It may or may not redirect us.
@@ -135,12 +136,18 @@ describe('Obtaining token (implicit flow)', function(){
 				//Make sure that this login form is doing POST
 				assert.equal(formMethod.toLowerCase(), 'post');
 
-				state.test.login['fields'] = []
-				$('form input[type=text], input[type=password], input[type=hidden], textarea').each(function(){
-					state.test.login['fields'].push($(this).attr('name'));
+				state.test.login['fields'] = [];
+				$('form input[type=text],' +
+                    ' input[type=password],' +
+                    'input[type=hidden],' +
+                    'textarea').each(function(){
+
+                    state.test.login['fields'].push($(this).attr('name'));
 				});
 
-				state.test.login['action'] = utils.getAbsoluteURI(config.uri, currentURI, formAction);
+				state.test.login['action'] = utils.getAbsoluteURI(config.uri,
+                                                    currentURI,
+                                                    formAction);
 				//console.log(state.test.login['action'] )
 		      	done();
 		    });
@@ -164,7 +171,8 @@ describe('Obtaining token (implicit flow)', function(){
 	  			//perform a login
 
 				request
-					.post(utils.getRelativePath(config.uri, state.test.login['action']))
+					.post(utils.getRelativePath(config.uri,
+                                                state.test.login['action']))
 				    .type('form')
 					.set('User-Agent',testOptions.userAgentValue)
 				    .redirects(0)
@@ -186,7 +194,10 @@ describe('Obtaining token (implicit flow)', function(){
 					    	'scope': 'bookmarks.fields'
 				};
 
-			    var authURL = utils.getRelativePath(config.uri, state.test.oadaConfiguration['authorization_endpoint']);
+			    var authURL = utils.getRelativePath(config.uri,
+                                    state.
+                                    test.
+                              oadaConfiguration['authorization_endpoint']);
 			    	authURL += '/' + '?' + utils.getQueryString(parameters);
 
 
@@ -197,12 +208,12 @@ describe('Obtaining token (implicit flow)', function(){
 
 			    req.expect(200).end(function(err,res){
 			    		should.not.exist(err, res.text);
-			    		state.test['grantscreen'] = {'html': ''}
+			    		state.test['grantscreen'] = {'html': ''};
 			    		state.test.grantscreen.html = res.text;
 			    		done();
 			    });
 	  		});
-  		})
+  		});
 
   });
 
@@ -252,7 +263,8 @@ describe('Grant Screen and Obtaining access token', function(){
 				.end(function(err, res){
 					should.not.exist(err, res.text);
 					//intercept the redirection
-					var intercepted = utils.getQueryParameters(res.headers.location);
+					var intercepted = utils.
+                                      getQueryParameters(res.headers.location);
 					intercepted.should.have.property('access_token');
 					state.test['access_token'] = intercepted['access_token'];
 					// //make sure states are equal
@@ -283,7 +295,10 @@ describe('Obtain ID token', function(){
                     'scope': 'openid.profile'
                 };
                 //not sure which endpoint should this be
-                var authURL = utils.getRelativePath(config.uri, state.test.oadaConfiguration['authorization_endpoint']);
+                var authURL = utils.getRelativePath(config.uri,
+                               state.
+                               test.
+                               oadaConfiguration['authorization_endpoint']);
                     authURL += '/' + '?' + utils.getQueryString(parameters);
 
                 var req = request
@@ -322,12 +337,14 @@ describe('Obtain ID token', function(){
                 .end(function(err, res){
                     should.not.exist(err, res.text);
                     //intercept the redirection
-                    var intercepted = utils.getQueryParameters(res.headers.location);
+                    var intercepted = utils.
+                                      getQueryParameters(res.headers.location);
                     intercepted.should.have.property('id_token');
                     state.test['id_token'] = intercepted['id_token'];
                     // //make sure states are equal
                     assert.equal(state.stateVar, intercepted.state);
-                    console.log(state.test['id_token']) //looks like its encrypted in JWT/JWS form?
+                    //looks like its encrypted in JWT/JWS form?
+                    console.log(state.test['id_token']);
                     done();
                 });
 
