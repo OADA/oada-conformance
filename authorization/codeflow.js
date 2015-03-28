@@ -24,9 +24,7 @@ var state = {
 
 var request = request.agent(config.uri);
 
-/**
-*  Test Part 1 - Check that it can do OAuth
-*/
+
 describe('Check Pre-requisites', function(){
 	describe('Exists .well_known/oada-configuration', function(){
 	  before(function (){

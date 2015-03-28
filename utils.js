@@ -1,13 +1,15 @@
+'use strict';
+
 var jwt = require('jsonwebtoken');
-var jws = require('jws-jwk').shim();
+// var jws = require('jws-jwk').shim();
 
 /**
 *  determine absolute URI from relative URI
 */
-exports.getAbsoluteURI = function(base, scope, relative_url){
- 	var url = scope + "/" + relative_url;
-    if(relative_url[0] == "/"){
-    	url = relative_url.replace(/^\//, base + "/");
+exports.getAbsoluteURI = function(base, scope, relativeURL){
+ 	var url = scope + '/' + relativeURL;
+    if(relativeURL[0] === '/'){
+    	url = relativeURL.replace(/^\//, base + '/');
     }
     return url;
 }
@@ -15,7 +17,7 @@ exports.getAbsoluteURI = function(base, scope, relative_url){
 /*
 *  get Relative path given full URI
 *  - note there are corner cases that are not implemented
-*  here. 
+*  here.
 */
 exports.getRelativePath = function(base, urlstr){
 
@@ -23,30 +25,30 @@ exports.getRelativePath = function(base, urlstr){
 	//      if urlstr form /c    				     -> /c
 	//      if urlstr in form c  					 -> CUR_URL + /c
 
-	var path = urlstr.replace(base, "");
-	if(path[0] != "/"){
-		path = "/" + path;
+	var path = urlstr.replace(base, '');
+	if(path[0] !== '/'){
+		path = '/' + path;
 	}
 	return path;
-}
+};
 
 exports.getQueryString = function(dict){
 	var str = [];
 	for(var key in dict){
-		str.push(key + "=" + encodeURIComponent(dict[key]));
+		str.push(key + '=' + encodeURIComponent(dict[key]));
 	}
-	return str.join("&");
-}
+	return str.join('&');
+};
 
 exports.getQueryParameters = function(uristr){
-	var m = uristr.split(/[?|#]/)[1].split("&");
+	var m = uristr.split(/[?|#]/)[1].split('&');
 	var dict = {};
 	for(var i in m){
-		var pair = m[i].split("=");
+		var pair = m[i].split('=');
 		dict[pair[0]] = pair[1];
 	}
 	return dict;
-}
+};
 
 exports.generateClientSecret = function(key, issuer, audience, accessCode ,kid){
 	var sec = {
@@ -63,5 +65,4 @@ exports.generateClientSecret = function(key, issuer, audience, accessCode ,kid){
 
 
 	return jwt.sign(sec, key, options);
-}
-
+};

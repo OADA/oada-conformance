@@ -1,3 +1,4 @@
+'use strict';
 /*
 *  OAuth 2.0 Implicit Flow
 *  Tests ability to get access token
@@ -10,9 +11,9 @@ chai.use(require('chai-json-schema'));
 var assert = chai.assert;
 var should = chai.should();
 var cheerio = require('cheerio');
-var jwt = require('jsonwebtoken');
-var fs = require('fs');
-var jws = require('jws-jwk').shim();
+// var jwt = require('jsonwebtoken');
+// var fs = require('fs');
+// var jws = require('jws-jwk').shim();
 var utils = require('../utils.js');
 
 var config = require('../config.js').authorization;
@@ -20,16 +21,17 @@ var testOptions = require('../config.js').options;
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
-var global = {
+var state = {
 	test : {}
-}
+};
 
 var request = request.agent(config.uri);
 
 describe('Check Pre-requisites', function(){
 	describe('Exists .well_known/oada-configuration', function(){
+
 	  before(function (){
-	    global.test['well_known'] = {}
+	    state.test['well_known'] = {};
 	  });
 
 	  it('should respond with oada-configuration document', function(done){
@@ -42,9 +44,9 @@ describe('Check Pre-requisites', function(){
 	      	should.not.exist(err);
 	      	//Make sure it matches the prescribed format
 	      	assert.jsonSchema(JSON.parse(res.text),
-	      					  require("./schema/oada_configuration.json"));
+	      					  require('./schema/oada_configuration.json'));
 	      	//save the config doc for later use
-	      	global.test["oadaConfiguration"] = JSON.parse(res.text);
+	      	state.test['oadaConfiguration'] = JSON.parse(res.text);
 	      	done();
 	      });
 	  });
@@ -59,9 +61,9 @@ describe('Check Pre-requisites', function(){
             should.not.exist(err);
             // //Make sure it matches the prescribed format
             // assert.jsonSchema(JSON.parse(res.text),
-            //                   require("./schema/oadaConfiguration.json"));
+            //                   require('./schema/openid_configuration.json'));
             //save the config doc for later use
-            global.test["openid-configuration"] = JSON.parse(res.text);
+            state.test['openid-configuration'] = JSON.parse(res.text);
             done();
           });
       });
@@ -81,9 +83,9 @@ describe('Check Pre-requisites', function(){
 	      	should.not.exist(err, res.text);
 
 	      	assert.jsonSchema(JSON.parse(res.text),
-	      				      require("./schema/oada_client_discovery.json"));
+	      				      require('./schema/oada_client_discovery.json'));
 
-	      	global.test["oada_client_discovery"] = JSON.parse(res.text);
+	      	state.test['oada_client_discovery'] = JSON.parse(res.text);
 
 	      	done();
 	      });
@@ -93,6 +95,9 @@ describe('Check Pre-requisites', function(){
 });
 
 
+/*
+ * Test begins after this point
+*/
 
 describe('Obtaining token (implicit flow)', function(){
   describe('Logging in', function(){
@@ -102,11 +107,11 @@ describe('Obtaining token (implicit flow)', function(){
 	  	});
 
 	  	it('has a login dialog that can be automated', function(done){
-	  		// bring up the "login" dialog
+	  		// bring up the 'login' dialog
 		    // and parse its form format
 
-		    var login_uri = global.test.oadaConfiguration.authorization_endpoint;
-		    var path = utils.getRelativePath(config.uri,login_uri);
+		    var loginURL = state.test.oadaConfiguration['authorization_endpoint'];
+		    var path = utils.getRelativePath(config.uri,loginURL);
 
 		    /* It may or may not redirect us.
 		     1. if it redirects (302)
@@ -120,23 +125,23 @@ describe('Obtaining token (implicit flow)', function(){
 		      .redirects(10)
 		      .end(function(err,res){
 		      	should.not.exist(err,res.text);
-		      	global.test["login"] = {};
-		      	var current_uri = config.uri + res.req.path;
-		      	$ = cheerio.load(res.text);
+		      	state.test['login'] = {};
+		      	var currentURI = config.uri + res.req.path;
+		      	var $ = cheerio.load(res.text);
 		      	//find out form action
-				var form_action = $("form").attr("action");
-				var form_method = $("form").attr("method");
+				var formAction = $('form').attr('action');
+				var formMethod = $('form').attr('method');
 
 				//Make sure that this login form is doing POST
-				assert.equal(form_method.toLowerCase(), "post");
+				assert.equal(formMethod.toLowerCase(), 'post');
 
-				global.test.login["fields"] = []
-				$("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
-					global.test.login["fields"].push($(this).attr("name"));
+				state.test.login['fields'] = []
+				$('form input[type=text], input[type=password], input[type=hidden], textarea').each(function(){
+					state.test.login['fields'].push($(this).attr('name'));
 				});
 
-				global.test.login["action"] = utils.getAbsoluteURI(config.uri, current_uri, form_action);
-				//console.log(global.test.login["action"] )
+				state.test.login['action'] = utils.getAbsoluteURI(config.uri, currentURI, formAction);
+				//console.log(state.test.login['action'] )
 		      	done();
 		    });
 	  	});
@@ -147,17 +152,19 @@ describe('Obtaining token (implicit flow)', function(){
   			it('should save cookie', function(done){
 	  			var postdata = {};
 	  			//construct the post data from config
-	  			for(var i in global.test.login.fields){
-	  				var name = global.test.login.fields[i];
-	  				postdata[name] = config.loginFieldsValue[name];
+	  			for(var i in state.test.login.fields){
+                    if (state.test.login.fields.hasOwnProperty(i)) {
+    	  				var name = state.test.login.fields[i];
+    	  				postdata[name] = config.loginFieldsValue[name];
+                    }
 	  			}
 
-	  			global.state_var = "xyz";  //TODO: gen rand string
+	  			state.stateVar = 'xyz';  //TODO: gen rand string
 
 	  			//perform a login
 
 				request
-					.post(utils.getRelativePath(config.uri, global.test.login["action"]))
+					.post(utils.getRelativePath(config.uri, state.test.login['action']))
 				    .type('form')
 					.set('User-Agent',testOptions.userAgentValue)
 				    .redirects(0)
@@ -172,26 +179,26 @@ describe('Obtaining token (implicit flow)', function(){
 
 	  		it('should authorize', function(done){
 	  			var parameters = {
-					    	"response_type" : "token",
-					    	"client_id": config.goldClient.client_id,
-					    	"state" : global.state_var,
-					    	"redirect_uri": config.goldClient.redirect_uri,
-					    	"scope": "bookmarks.fields"
-				}
+					    	'response_type' : 'token',
+					    	'client_id': config.goldClient['client_id'],
+					    	'state' : state.stateVar,
+					    	'redirect_uri': config.goldClient['redirect_uri'],
+					    	'scope': 'bookmarks.fields'
+				};
 
-			    var auth_url = utils.getRelativePath(config.uri, global.test.oadaConfiguration["authorization_endpoint"]);
-			    	auth_url += "/" + "?" + utils.getQueryString(parameters);
+			    var authURL = utils.getRelativePath(config.uri, state.test.oadaConfiguration['authorization_endpoint']);
+			    	authURL += '/' + '?' + utils.getQueryString(parameters);
 
 
 			    var req = request
-			    		.get(auth_url)
+			    		.get(authURL)
 			    		.set('User-Agent',testOptions.userAgentValue)
 			    		.type('form');
 
 			    req.expect(200).end(function(err,res){
 			    		should.not.exist(err, res.text);
-			    		global.test["grantscreen"] = {"html": ""}
-			    		global.test.grantscreen.html = res.text;
+			    		state.test['grantscreen'] = {'html': ''}
+			    		state.test.grantscreen.html = res.text;
 			    		done();
 			    });
 	  		});
@@ -206,7 +213,7 @@ describe('Obtaining token (implicit flow)', function(){
 describe('Grant Screen and Obtaining access token', function(){
   		var $;
   		before(function(){
-  			$ = cheerio.load(global.test.grantscreen.html);
+  			$ = cheerio.load(state.test.grantscreen.html);
   		});
 
   		it('should correctly displays all requested scopes', function(done){
@@ -225,15 +232,18 @@ describe('Grant Screen and Obtaining access token', function(){
 
   			var data = {};
 
-  			$("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
-				data[$(this).attr("name")] = $(this).attr("value");
+  			$('form input[type=text],'+
+                'input[type=password],' +
+                'input[type=hidden],' +
+                ' textarea').each(function(){
+				data[$(this).attr('name')] = $(this).attr('value');
 			});
 
-			var form_action = $("form").attr("action");
-			var post_url = utils.getRelativePath(config.uri, form_action);
+			var formAction = $('form').attr('action');
+			var postURL = utils.getRelativePath(config.uri, formAction);
 
 			request
-				.post(post_url)
+				.post(postURL)
 				.set('User-Agent',testOptions.userAgentValue)
 				.type('form')
 				.send(data)
@@ -242,11 +252,11 @@ describe('Grant Screen and Obtaining access token', function(){
 				.end(function(err, res){
 					should.not.exist(err, res.text);
 					//intercept the redirection
-					var intercepted_redir = utils.getQueryParameters(res.headers.location);
-					intercepted_redir.should.have.property('access_token');
-					global.test.access_token = intercepted_redir.access_token;
+					var intercepted = utils.getQueryParameters(res.headers.location);
+					intercepted.should.have.property('access_token');
+					state.test['access_token'] = intercepted['access_token'];
 					// //make sure states are equal
-					assert.equal(global.state_var, intercepted_redir.state);
+					assert.equal(state.stateVar, intercepted.state);
 
 					done();
 				});
@@ -266,18 +276,18 @@ describe('Obtain ID token', function(){
 
         it('should authorize', function(done){
                 var parameters = {
-                    "response_type" : "id_token",
-                    "client_id": config.goldClient.client_id,
-                    "state" : "xyz",
-                    "redirect_uri": config.goldClient.redirect_uri,
-                    "scope": "openid.profile"
-                }
+                    'response_type' : 'id_token',
+                    'client_id': config.goldClient['client_id'],
+                    'state' : 'xyz',
+                    'redirect_uri': config.goldClient['redirect_uri'],
+                    'scope': 'openid.profile'
+                };
                 //not sure which endpoint should this be
-                var auth_url = utils.getRelativePath(config.uri, global.test.oadaConfiguration["authorization_endpoint"]);
-                    auth_url += "/" + "?" + utils.getQueryString(parameters);
+                var authURL = utils.getRelativePath(config.uri, state.test.oadaConfiguration['authorization_endpoint']);
+                    authURL += '/' + '?' + utils.getQueryString(parameters);
 
                 var req = request
-                        .get(auth_url)
+                        .get(authURL)
                         .set('User-Agent',testOptions.userAgentValue)
                         .type('form');
 
@@ -292,15 +302,18 @@ describe('Obtain ID token', function(){
 
             var data = {};
 
-            $("form input[type=text], input[type=password], input[type=hidden], textarea").each(function(m,t){
-                data[$(this).attr("name")] = $(this).attr("value");
+            $('form input[type=text],' +
+                ' input[type=password],' +
+                ' input[type=hidden],' +
+                ' textarea').each(function(){
+                data[$(this).attr('name')] = $(this).attr('value');
             });
 
-            var form_action = $("form").attr("action");
-            var post_url = utils.getRelativePath(config.uri, form_action);
+            var formAction = $('form').attr('action');
+            var postURL = utils.getRelativePath(config.uri, formAction);
 
             request
-                .post(post_url)
+                .post(postURL)
                 .set('User-Agent',testOptions.userAgentValue)
                 .type('form')
                 .send(data)
@@ -309,13 +322,12 @@ describe('Obtain ID token', function(){
                 .end(function(err, res){
                     should.not.exist(err, res.text);
                     //intercept the redirection
-                    var intercepted_redir = utils.getQueryParameters(res.headers.location);
-                    intercepted_redir.should.have.property('id_token');
-                    global.test.id_token = intercepted_redir.id_token;
+                    var intercepted = utils.getQueryParameters(res.headers.location);
+                    intercepted.should.have.property('id_token');
+                    state.test['id_token'] = intercepted['id_token'];
                     // //make sure states are equal
-                    assert.equal(global.state_var, intercepted_redir.state);
-
-                    console.log(global.test.id_token) //looks like its encrypted in JWT/JWS form?
+                    assert.equal(state.stateVar, intercepted.state);
+                    console.log(state.test['id_token']) //looks like its encrypted in JWT/JWS form?
                     done();
                 });
 
@@ -329,10 +341,11 @@ describe('Get User Info', function(){
 
     it('should not authorize', function(done){
                 //not sure which endpoint should this be
-                var user_url = utils.getRelativePath(config.uri, global.test["openid-configuration"].userinfo_endpoint);
+                var userInfoURL = utils.getRelativePath(config.uri,
+                    state.test['openid-configuration']['userinfo_endpoint']);
 
                 var req = request
-                        .get(user_url)
+                        .get(userInfoURL)
                         .set('User-Agent',testOptions.userAgentValue)
                         .type('form');
 
