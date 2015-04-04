@@ -14,6 +14,7 @@ var should = chai.should();
 var cheerio = require('cheerio');
 var fs = require('fs');
 var utils = require('../utils.js');
+var phantomUtils = require('../phantom-utils.js')
 var config = require('../config.js').authorization;
 var testOptions = require('../config.js').options;
 //Allow self signed certs
@@ -52,7 +53,7 @@ describe('Check Pre-requisites', function(){
 
 	});
 
-	describe('Exists .well_known/oada-client-discovery', function(){
+	xdescribe('Exists .well_known/oada-client-discovery', function(){
 
 	  it('should respond with oada-client-discovery document', function(done){
 
@@ -80,13 +81,13 @@ describe('Check Pre-requisites', function(){
  * Test begins after this point
 */
 
-describe('access token in code flow', function(){
+describe('get access token in code flow process', function(){
    var _page;
    var _ph;
 
-    it('can login', function(done){
+   it('presents login form', function(done){
 
-             state.stateVariable = 'krpo';
+             state.stateVariable = 'LLL0';
              var parameters = {
                          'response_type' : 'code',
                          'client_id': config.goldClient['client_id'],
@@ -103,35 +104,66 @@ describe('access token in code flow', function(){
             phantom.create(function (ph) {
                 _ph = ph;
                 ph.createPage(function (page) {
-                    // console.log("Going to " + aurl);
-                    page.open(aurl, function (status) {
-                        page.evaluate(function (config) {
-                              var list = []
-                              for(var key in config.automation.login.fields){
-                                var value = config.automation.login.fields[key];
-                                var ix = document.querySelectorAll(key);
-                                ix[0].value = value;
-                                list.push(ix[0]);
-                              }
-                              var buttons = document.querySelectorAll(config.automation.login.clickOn);
-                              buttons[0].click();
-                              return list;
+                    _page = page;
+                    // page.includeJs("http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js", function() {
+                        page.open(aurl, function (status) {
+                            page.render("screen0.png");
+                            page.evaluate(function (formConfig) {
+                                  for(var key in formConfig.fields){
+                                    var value = formConfig.fields[key];
+                                    var ielems = document.querySelectorAll(key);
+                                    for(var k in ielems){
+                                        var element = ielems[k];
+                                        element.value = value;
+                                    }
+                                  }
 
-                        }, function(result){
-                            //wait for page transition
-                            setTimeout(function(){
-                                page.render("screen1.png");
-                                done();
-                            }, 2000)
-                            //ph.exit();
+                                  var buttons = document.querySelectorAll(formConfig.successClick);
+                                  buttons[0].click();
 
-                        }, config);
-                    });
+                            }, function(result){
+                                //wait for page transition
+                                setTimeout(function(){
+                                    done();
+                                }, 1000)
+                                //ph.exit();
+
+                            }, config.automation.shift());
+                        });
+                    // });
                 });
             });
 
    });
 
+   it('presents scope form', function(done){
+         this.timeout(15000);
+        _page.render("screen1.png");
+
+
+        _page.set('onUrlChanged', function(url) {
+            console.log("New URL: "+url)
+        })
+
+
+        _page.evaluate(function(formConfig){
+
+
+            for(var index in formConfig.clicks){
+                var value = formConfig.clicks[index];
+                $(value).click();
+            }
+
+            //final click
+            $(formConfig.successClick).click();
+
+        }, function(result){
+             setTimeout(function(){
+                _page.render("screen2.png");
+                done();
+             }, 2000)
+        }, config.automation.shift());
+   });
 
 
 });
