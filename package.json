@@ -11,7 +11,8 @@
     "should": "^4.6.1",
     "jws-jwk": "^0.1.4",
     "supertest": "^0.15.0",
-    "superagent": "^0.21.0"
+    "superagent": "^0.21.0",
+    "phantomjs": "*"
   },
   "devDependencies": {
     "mocha": "*",
