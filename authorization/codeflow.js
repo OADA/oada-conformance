@@ -139,32 +139,33 @@ describe('get access token in code flow process', function(){
    it('presents scope form', function(done){
          this.timeout(15000);
         _page.render("screen1.png");
-
-
         _page.set('onUrlChanged', function(url) {
-            console.log("New URL: "+url)
+            //TODO: seems hacky and unreliable
+            //how many redirection will OAuth do
+            //Expect a redirection
+            var intercepted = utils.
+            getQueryParameters(url);
+            intercepted.should.have.property('code');
+            state.test['access_code'] = intercepted.code;
+
+            done();
         })
 
-
         _page.evaluate(function(formConfig){
-
 
             for(var index in formConfig.clicks){
                 var value = formConfig.clicks[index];
                 $(value).click();
             }
 
-            //final click
             $(formConfig.successClick).click();
 
         }, function(result){
              setTimeout(function(){
                 _page.render("screen2.png");
-                done();
-             }, 2000)
+             }, 2000);
         }, config.automation.shift());
    });
-
 
 });
 
@@ -323,25 +324,50 @@ describe('get access token in code flow process', function(){
 //   });
 
 
-//   describe('Exchanging Access Token', function(){
-//   		var cert;
-//   		var secret;
-//   		var tokenEndpoint;
+  describe('Exchanging Access Token Step', function(){
+  		var cert;
+  		var secret;
+  		var tokenEndpoint;
 
-//   		before(function(){
-//   			tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
-//   			cert = fs.readFileSync('certs/private.pem');
-//   			secret = utils.generateClientSecret(
-// 				cert,
-// 				config.goldClient['client_id'],
-// 				tokenEndpoint,
-// 				state.test['access_code'],
-// 				config.goldClient['key_id']
-// 			);
+  		before(function(){
+  			tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
+  			cert = fs.readFileSync('certs/private.pem');
+  			secret = utils.generateClientSecret(
+				cert,
+				config.goldClient['client_id'],
+				tokenEndpoint,
+				state.test['access_code'],
+				config.goldClient['key_id']
+			);
+  		});
 
-//   		});
+        it('should succeed', function(done){
+              var parameters = {
+                    'grant_type': 'authorization_code',
+                    'code': state.test['access_code'],
+                    'redirect_uri': config.goldClient['redirect_uri'],
+                    'client_id': config.goldClient['client_id'],
+                    'client_secret': secret
+              };
 
+              var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
+              request
+              .post(postURL)
+              .type('form')
+              .set('User-Agent', testOptions.userAgentValue)
+              .send(parameters)
+              .expect(200)
+              .end(function(err, res){
+                  should.not.exist(err, res.text);
+                  state.test.tokenResponse = JSON.parse(res.text);
+                  console.log(res.text)
+                  done();
+              });
+
+        });
+
+ });
 
 // 		it('should reject bad parameters', function(done){
 //   			//try wrong parameter
