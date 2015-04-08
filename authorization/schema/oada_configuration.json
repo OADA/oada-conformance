@@ -12,6 +12,9 @@
         "oada_base_uri": {
             "type": "string"
         },
+        "registration_endpoint": {
+            "type": "string"
+        },
         "client_secret_alg_supported":{
         	"type": "array",
         	"minItems": 1,

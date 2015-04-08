@@ -18,11 +18,10 @@ var phantomUtils = require('../phantom-utils.js')
 var config = require('../config.js').authorization;
 var testOptions = require('../config.js').options;
 
-var KEY_ACCESS_TOKEN = "AccessToken"
+var KEY_ACCESS_TOKEN = "access_token"
 
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
-
 
 
 var state = {
@@ -33,6 +32,7 @@ var request = request.agent(config.uri);
 
 
 describe('Check Pre-requisites', function(){
+
 	describe('Exists .well_known/oada-configuration', function(){
 	  before(function (){
 	    state.test['well_known'] = {};
@@ -50,7 +50,7 @@ describe('Check Pre-requisites', function(){
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      					  require('./schema/oada_configuration.json'));
 	      	//save the config doc for later use
-	      	state.test['oadaConfiguration'] = JSON.parse(res.text);
+	      	state.test.oadaConfiguration = JSON.parse(res.text);
 
 	      	done();
 	      });
@@ -58,28 +58,28 @@ describe('Check Pre-requisites', function(){
 
 	});
 
-	xdescribe('Exists .well_known/oada-client-discovery', function(){
+	describe('Registration', function(){
 
-	  it('should respond with oada-client-discovery document', function(done){
+	  it('supports dynamic client registration', function(done){
+        var postTo = utils.getRelativePath(config.uri, state.test.oadaConfiguration['registration_endpoint']);
+        request
+          .get(postTo)
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .end(function(err,res){
+            //check schema
+            state.test.clientInfo = JSON.parse(res.text);
+            assert.jsonSchema(state.test.clientInfo,
+                              require('./schema/register.json'));
 
-	    request
-	      .get('/.well-known/oada-client-discovery')
-	      .set('Accept', 'application/json')
-	      .expect('Content-Type', /json/)
-	      .expect(200)
-	      .end(function(err,res){
-	      	should.not.exist(err, res);
-
-	      	assert.jsonSchema(JSON.parse(res.text),
-	      				      require('./schema/oada_client_discovery.json'));
-
-	      	state.test['oada_client_discovery'] = JSON.parse(res.text);
-
-	      	done();
-	      });
+            done();
+          });
 	  });
 
 	});
+
+
 });
 
 /*
@@ -89,9 +89,9 @@ describe('Check Pre-requisites', function(){
 describe('get access token in code flow process', function(){
    var _page;
    var _ph;
+   this.timeout(60000);
 
    it('presents login form', function(done){
-
              state.stateVariable = 'LLL0';
              var parameters = {
                          'response_type' : 'code',
@@ -105,7 +105,6 @@ describe('get access token in code flow process', function(){
              var aurl = config.uri + '/auth';
              aurl += '/' + '?' + utils.getQueryString(parameters);
 
-            this.timeout(5000);
             phantom.create(function (ph) {
                 _ph = ph;
                 ph.createPage(function (page) {
@@ -142,7 +141,6 @@ describe('get access token in code flow process', function(){
    });
 
    it('presents scope form', function(done){
-         this.timeout(5000);
         _page.render("screen1.png");
         _page.set('onUrlChanged', function(url) {
             //TODO: seems hacky and unreliable
@@ -180,6 +178,8 @@ describe('Exchanging Access Token Step', function(){
   		var secret;
   		var tokenEndpoint;
 
+        this.timeout(60000);
+
   		before(function(){
   			tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
   			cert = fs.readFileSync('certs/private.pem');
@@ -209,10 +209,79 @@ describe('Exchanging Access Token Step', function(){
               .set('User-Agent', testOptions.userAgentValue)
               .send(parameters)
               .end(function(err, res){
-                JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
+                try{
+                    JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
+                }catch(ex){
+                    done();
+                }
                 done();
               });
         });
+
+
+     it('should reject bad parameters', function(done){
+             //try wrong parameter
+         var parameters = {
+             'grant_type': 'authorization_code',
+             'code': state.test['access_code'] + 'x',
+             'redirect_uri': config.goldClient['redirect_uri'],
+             'client_id': config.goldClient['client_id'],
+             'client_secret': secret
+         };
+
+         var proto = JSON.stringify(parameters);
+         var toggles = [ ];
+
+         for(var p = 0; p < 32 ; p++){
+             //get bit representation of p
+             var bitstr = p.toString(2);
+             //00001 means we will manipulate
+                //   (invalidate) `client_secret` parameter
+             //00010 means we will manipulate `client_id` .etc
+             var badParams = JSON.parse(proto);
+             for(var i = 0; i < bitstr.length; i++){
+                 if(bitstr[i] === '1'){
+                     //manipulate ith parameter of parameters
+                     var key = Object.keys(parameters)[i];
+                     badParams[key] = 'BAD1BAD' + bitstr;
+                 }
+             }
+             toggles.push(badParams);
+         }
+
+         var recurse = function(f){
+             // If we have tested all possible
+             // combination of bad request parameter
+             // trigger done callback
+
+             if(toggles.length === 0){
+                 done();
+                 return;
+             }
+             f();
+         };
+
+         var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
+
+         var mkrequest = function(){
+             request
+                 .post(postURL)
+                 .type('form')
+                 .set('User-Agent', testOptions.userAgentValue)
+                 .send(toggles.pop())
+                 .end(function(err, res){
+                    try{
+                        JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
+                    }catch(ex){
+                        //okay
+                    }
+                    recurse(mkrequest);
+                 });
+         };
+
+         mkrequest();
+
+         });
 
         it('should succeed', function(done){
               var parameters = {
@@ -243,6 +312,9 @@ describe('Exchanging Access Token Step', function(){
 
 
         it('should fail when reusing access code', function(done){
+              if(state.test.tokenResponse[KEY_ACCESS_TOKEN] === undefined){
+                    this.skip();
+              }
               var parameters = {
                     'grant_type': 'authorization_code',
                     'code': state.test['access_code'],

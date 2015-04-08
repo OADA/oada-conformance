@@ -56,7 +56,7 @@ exports.getQueryParameters = function(uristr){
 
 exports.generateClientSecret = function(key, issuer, audience, accessCode ,kid){
 	var sec = {
-		ac : accessCode
+		jti : accessCode
 	};
 
 	var options = {
