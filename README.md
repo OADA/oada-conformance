@@ -3,8 +3,9 @@ Automated tests for OADA API
 
 [![Build Status](https://travis-ci.org/OADA/oada-compliance.svg?branch=authorization)](https://travis-ci.org/OADA/oada-compliance)
 
-### Install mocha
-    npm install -g mocha
-### Running authorization test
-    ./test authorization
+## Running all tests ##
+    npm run check
+
+## Running authorization tests ##
+    npm run check -- authorization
 

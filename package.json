@@ -4,25 +4,26 @@
   "description": "OADA Compliance Test Suite",
   "main": "config.js",
   "dependencies": {
-    "cheerio": "^0.18.0",
-    "jsonwebtoken": "^3.2.2",
-    "chai-json-schema": "^1.1.0",
     "chai": "^1.10.0",
-    "should": "^4.6.1",
+    "chai-json-schema": "^1.1.0",
+    "cheerio": "^0.18.0",
+    "jsonwebtoken": "^5.0.2",
     "jws-jwk": "^0.1.4",
-    "supertest": "^0.15.0",
-    "superagent": "^0.21.0",
-    "phantomjs": "*"
+    "mocha": "^2.2.5",
+    "phantom": "^0.7.2",
+    "phantomjs": "^1.9.17",
+    "should": "^4.6.1",
+    "supertest": "^0.15.0"
   },
   "devDependencies": {
-    "mocha": "*",
     "jshint": "~2.6.1",
     "jshint-stylish": "~1.0.1",
     "jscs": "~1.11.3"
   },
   "scripts": {
-    "test": "bash test",
-    "lint": "node_modules/jshint/bin/jshint --reporter node_modules/jshint-stylish/stylish.js .",
+    "check": "cd tests && mocha --opts mocha.opts",
+    "test": "mocha",
+    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
     "style": "jscs ."
   },
   "repository": {

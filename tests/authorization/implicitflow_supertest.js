@@ -14,10 +14,10 @@ var cheerio = require('cheerio');
 // var jwt = require('jsonwebtoken');
 // var fs = require('fs');
 // var jws = require('jws-jwk').shim();
-var utils = require('../utils.js');
+var utils = require('../../lib/utils.js');
 
-var config = require('../config.js').authorization;
-var testOptions = require('../config.js').options;
+var config = require('../../config.js').authorization;
+var testOptions = require('../../config.js').options;
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 

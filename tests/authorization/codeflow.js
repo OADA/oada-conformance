@@ -13,10 +13,11 @@ var phantom = require('phantom');
 var should = chai.should();
 var cheerio = require('cheerio');
 var fs = require('fs');
-var utils = require('../utils.js');
-var phantomUtils = require('../phantom-utils.js')
-var config = require('../config.js').authorization;
-var testOptions = require('../config.js').options;
+
+var utils = require('../../lib/utils.js');
+var phantomUtils = require('../../lib/phantom-utils.js')
+var config = require('../../config.js').authorization;
+var testOptions = require('../../config.js').options;
 
 var KEY_ACCESS_TOKEN = "access_token"
 
@@ -45,7 +46,8 @@ describe('Check Pre-requisites', function(){
 	      .expect('Content-Type', /json/)
 	      .expect(200)
 	      .end(function(err,res){
-	      	should.not.exist(err);
+            if (err) { done(err); }
+
 	      	//Make sure it matches the prescribed format
 	      	assert.jsonSchema(JSON.parse(res.text),
 	      					  require('./schema/oada_configuration.json'));
@@ -63,11 +65,14 @@ describe('Check Pre-requisites', function(){
 	  it('supports dynamic client registration', function(done){
         var postTo = utils.getRelativePath(config.uri, state.test.oadaConfiguration['registration_endpoint']);
         request
-          .get(postTo)
+          .post(postTo)
+          .send() // TOD: Send valid client metadata
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err,res){
+            if (err) { done(err); }
+
             //check schema
             state.test.clientInfo = JSON.parse(res.text);
             assert.jsonSchema(state.test.clientInfo,
@@ -209,6 +214,8 @@ describe('Exchanging Access Token Step', function(){
               .set('User-Agent', testOptions.userAgentValue)
               .send(parameters)
               .end(function(err, res){
+                if (err) { done(err); }
+
                 try{
                     JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
                 }catch(ex){
@@ -270,6 +277,8 @@ describe('Exchanging Access Token Step', function(){
                  .set('User-Agent', testOptions.userAgentValue)
                  .send(toggles.pop())
                  .end(function(err, res){
+                    if (err) { done(err); }
+
                     try{
                         JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
                     }catch(ex){
@@ -301,7 +310,8 @@ describe('Exchanging Access Token Step', function(){
               .send(parameters)
               .expect(200)
               .end(function(err, res){
-                  should.not.exist(err, res.text);
+                  if (err) { done(err); }
+
                   state.test.tokenResponse = JSON.parse(res.text);
                   state.test.tokenResponse.should.have.property(KEY_ACCESS_TOKEN);
                   // console.log("ACTOKEN: " + state.test.tokenResponse[KEY_ACCESS_TOKEN])
@@ -331,6 +341,8 @@ describe('Exchanging Access Token Step', function(){
               .set('User-Agent', testOptions.userAgentValue)
               .send(parameters)
               .end(function(err, res){
+                  if (err) { done(err); }
+
                   var tryJSON = JSON.parse(res.text);
                   tryJSON.should.not.have.property(KEY_ACCESS_TOKEN)
                   done();
