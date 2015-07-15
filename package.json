@@ -24,7 +24,7 @@
   "scripts": {
     "check": "cd tests && mocha --opts mocha.opts",
     "test": "mocha",
-    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
+    "lint": "jshint --reporter node_modules/jshint-stylish .",
     "style": "jscs ."
   },
   "pre-commit": [

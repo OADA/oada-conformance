@@ -9,17 +9,18 @@ var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
 var assert = chai.assert;
-var phantom = require('phantom');
-var should = chai.should();
-var cheerio = require('cheerio');
+// TODO: Handle jshint browser stuff better?
+var phantom = require('phantom'); /* jshint browser: true, jquery: true */
+//var should = chai.should();
+//var cheerio = require('cheerio');
 var fs = require('fs');
 
 var utils = require('../../lib/utils.js');
-var phantomUtils = require('../../lib/phantom-utils.js')
+//var phantomUtils = require('../../lib/phantom-utils.js');
 var config = require('../../config.js').authorization;
 var testOptions = require('../../config.js').options;
 
-var KEY_ACCESS_TOKEN = "access_token"
+var KEY_ACCESS_TOKEN = "access_token";
 
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
@@ -116,25 +117,30 @@ describe('get access token in code flow process', function(){
                     _page = page;
                     // page.includeJs("http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js", function() {
                         page.open(aurl, function (status) {
+                            assert.equal(status, 'success');
+
                             page.render("screen0.png");
                             page.evaluate(function (formConfig) {
                                   for(var key in formConfig.fields){
-                                    var value = formConfig.fields[key];
-                                    var ielems = document.querySelectorAll(key);
-                                    for(var k in ielems){
-                                        var element = ielems[k];
-                                        element.value = value;
+                                    if (formConfig.fields.hasOwnProperty(key)) {
+                                        var value = formConfig.fields[key];
+                                        var ielems = document.querySelectorAll(key);
+                                        for(var k in ielems){
+                                            if (ielems.hasOwnProperty(k)) {
+                                                var element = ielems[k];
+                                                element.value = value;
+                                            }
+                                        }
                                     }
                                   }
 
                                   var buttons = document.querySelectorAll(formConfig.successClick);
                                   buttons[0].click();
-
-                            }, function(result){
+                            }, function(){
                                 //wait for page transition
                                 setTimeout(function(){
                                     done();
-                                }, 1000)
+                                }, 1000);
                                 //ph.exit();
 
                             }, config.automation.shift());
@@ -157,18 +163,20 @@ describe('get access token in code flow process', function(){
             state.test['access_code'] = intercepted.code;
 
             done();
-        })
+        });
 
         _page.evaluate(function(formConfig){
 
             for(var index in formConfig.clicks){
-                var value = formConfig.clicks[index];
-                $(value).click();
+                if (formConfig.clicks.hasOwnProperty(index)) {
+                    var value = formConfig.clicks[index];
+                    $(value).click();
+                }
             }
 
             $(formConfig.successClick).click();
 
-        }, function(result){
+        }, function(){
              setTimeout(function(){
                 _ph.exit();
              }, 2000);
@@ -217,7 +225,7 @@ describe('Exchanging Access Token Step', function(){
                 if (err) { done(err); }
 
                 try{
-                    JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
+                    JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN);
                 }catch(ex){
                     done();
                 }
@@ -280,7 +288,7 @@ describe('Exchanging Access Token Step', function(){
                     if (err) { done(err); }
 
                     try{
-                        JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN)
+                        JSON.parse(res.text).should.not.have.property(KEY_ACCESS_TOKEN);
                     }catch(ex){
                         //okay
                     }
@@ -344,7 +352,7 @@ describe('Exchanging Access Token Step', function(){
                   if (err) { done(err); }
 
                   var tryJSON = JSON.parse(res.text);
-                  tryJSON.should.not.have.property(KEY_ACCESS_TOKEN)
+                  tryJSON.should.not.have.property(KEY_ACCESS_TOKEN);
                   done();
               });
 
