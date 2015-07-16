@@ -40,3 +40,7 @@ exports.authorization = {
         ]
     ]
 };
+
+exports.options = {
+    userAgentValue : 'OADA-Compliance-Test/1.1 (mocha; node-js)'
+};

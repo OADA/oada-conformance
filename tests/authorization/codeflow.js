@@ -12,6 +12,7 @@ chai.use(require('chai-json-schema'));
 //var cheerio = require('cheerio');
 var expect = chai.expect;
 var fs = require('fs');
+var path = require('path');
 var debug = require('debug')('tests:auth:code');
 
 var utils = require('../../lib/utils.js');
@@ -83,6 +84,8 @@ describe('Check Pre-requisites', function() {
                     expect(state.test.clientInfo)
                         .to.be.jsonSchema(metadataSchema);
 
+                    debug(state.test.clientInfo);
+
                     done();
                 });
         });
@@ -133,10 +136,10 @@ describe('Exchanging Access Token Step', function() {
 
     before(function() {
         tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
-        cert = fs.readFileSync('certs/private.pem');
+        cert = fs.readFileSync(path.join(__dirname, 'certs/private.pem'));
         secret = utils.generateClientSecret(
                 cert,
-                config.goldClient['client_id'],
+                state.test.clientInfo['client_id'],
                 tokenEndpoint,
                 state.test['access_code'],
                 config.goldClient['key_id']
@@ -165,9 +168,8 @@ describe('Exchanging Access Token Step', function() {
                 try {
                     expect(JSON.parse(res.text))
                         .to.not.have.property(KEY_ACCESS_TOKEN);
-                } catch (ex) {
-                    done();
-                }
+                } catch (ex) {}
+
                 done();
             });
     });
@@ -242,8 +244,8 @@ describe('Exchanging Access Token Step', function() {
         var parameters = {
             'grant_type': 'authorization_code',
             'code': state.test['access_code'],
-            'redirect_uri': config.goldClient['redirect_uri'],
-            'client_id': config.goldClient['client_id'],
+            'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+            'client_id': state.test.clientInfo['client_id'],
             'client_secret': secret
         };
 
