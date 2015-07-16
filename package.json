@@ -38,7 +38,7 @@
     "url": "https://github.com/OADA/oada-compliance.git"
   },
   "author": "Pat S. Sabpisal",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/OADA/oada-compliance/issues"
   },
