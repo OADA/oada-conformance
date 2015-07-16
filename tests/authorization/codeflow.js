@@ -51,7 +51,7 @@ describe('Check Pre-requisites', function() {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function(err, res) {
-                    if (err) { done(err); }
+                    if (err) { return done(err); }
 
                     //Make sure it matches the prescribed format
                     expect(JSON.parse(res.text))
@@ -77,7 +77,7 @@ describe('Check Pre-requisites', function() {
                 .expect('Content-Type', /json/)
                 .expect(201)
                 .end(function(err, res) {
-                    if (err) { done(err); }
+                    if (err) { return done(err); }
 
                     //check schema
                     state.test.clientInfo = JSON.parse(res.text);
@@ -163,8 +163,6 @@ describe('Exchanging Access Token Step', function() {
             .set('User-Agent', testOptions.userAgentValue)
             .send(parameters)
             .end(function(err, res) {
-                if (err) { done(err); }
-
                 try {
                     expect(JSON.parse(res.text))
                         .to.not.have.property(KEY_ACCESS_TOKEN);
@@ -225,8 +223,6 @@ describe('Exchanging Access Token Step', function() {
                 .set('User-Agent', testOptions.userAgentValue)
                 .send(toggles.pop())
                 .end(function(err, res) {
-                    if (err) { done(err); }
-
                     try {
                         expect(JSON.parse(res.text))
                             .to.not.have.property(KEY_ACCESS_TOKEN);
@@ -258,7 +254,7 @@ describe('Exchanging Access Token Step', function() {
             .send(parameters)
             .expect(200)
             .end(function(err, res) {
-                if (err) { done(err); }
+                if (err) { return done(err); }
 
                 state.test.tokenResponse = JSON.parse(res.text);
                 expect(state.test.tokenResponse)
@@ -291,7 +287,7 @@ describe('Exchanging Access Token Step', function() {
             .set('User-Agent', testOptions.userAgentValue)
             .send(parameters)
             .end(function(err, res) {
-                if (err) { done(err); }
+                if (err) { return done(err); }
 
                 var tryJSON = JSON.parse(res.text);
                 expect(tryJSON).to.not.have.property(KEY_ACCESS_TOKEN);
