@@ -12,7 +12,6 @@ var cheerio = require('cheerio');
 var expect = chai.expect;
 // var jwt = require('jsonwebtoken');
 // var fs = require('fs');
-// var jws = require('jws-jwk').shim();
 var utils = require('../../lib/utils.js');
 
 var config = require('../../config.js').authorization;

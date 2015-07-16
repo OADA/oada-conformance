@@ -10,7 +10,6 @@
     "cheerio": "^0.18.0",
     "debug": "^2.2.0",
     "jsonwebtoken": "^5.0.2",
-    "jws-jwk": "^0.1.4",
     "mocha": "^2.2.5",
     "phantom": "^0.7.2",
     "phantomjs": "^1.9.17",
