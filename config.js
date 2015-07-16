@@ -14,5 +14,29 @@ exports.authorization = {
         'client_id': '',
         'key_id': '',
         'redirect_uri': ''
-    }
+    },
+    loginActions: [
+         [
+            {
+                id: '[name="username"]',
+                type: 'type',
+                value: 'andy',
+            },
+            {
+                id: '[name="password"]',
+                type: 'type',
+                value: 'pass',
+            },
+            {
+                id: '.btn-success',
+                type: 'click'
+            }
+        ],
+        [
+            {
+                id: '#allow',
+                type: 'click'
+            }
+        ]
+    ]
 };

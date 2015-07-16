@@ -10,16 +10,18 @@ var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
 var assert = chai.assert;
-// TODO: Handle jshint browser stuff better?
-var phantom = require('phantom'); /* jshint browser: true, jquery: true */
 //var should = chai.should();
 //var cheerio = require('cheerio');
 var fs = require('fs');
+var debug = require('debug')('tests:auth:code');
 
 var utils = require('../../lib/utils.js');
 //var phantomUtils = require('../../lib/phantom-utils.js');
 var config = require('../../config.js').authorization;
 var testOptions = require('../../config.js').options;
+var autoLogin = require('../../lib/autoLogin.js');
+
+var metadata = require('../../metadata');
 
 var KEY_ACCESS_TOKEN = 'access_token';
 
@@ -67,10 +69,10 @@ describe('Check Pre-requisites', function() {
                     state.test.oadaConfiguration['registration_endpoint']);
             request
                 .post(postTo)
-                .send() // TOD: Send valid client metadata
+                .send(metadata)
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
-                .expect(200)
+                .expect(201)
                 .end(function(err, res) {
                     if (err) { done(err); }
 
@@ -90,92 +92,33 @@ describe('Check Pre-requisites', function() {
 */
 
 describe('get access token in code flow process', function() {
-    var _page;
-    var _ph;
     this.timeout(60000);
 
-    it('presents login form', function(done) {
+    it('upon login, responds with access code', function(done) {
         state.stateVariable = 'LLL0';
         var parameters = {
             'response_type' : 'code',
-            'client_id': config.goldClient['client_id'],
+            'client_id': state.test.clientInfo['client_id'],
             'state' : state.stateVariable,
-            'redirect_uri': config.goldClient['redirect_uri'],
+            'redirect_uri': state.test.clientInfo['redirect_uris'][0],
             'scope': 'bookmarks.machines',
             'prompt': 'consent'
         };
 
-        var aurl = config.uri + '/auth';
+        var aurl = state.test.oadaConfiguration['authorization_endpoint'];
         aurl += '/' + '?' + utils.getQueryString(parameters);
 
-        phantom.create(function(ph) {
-            _ph = ph;
-            ph.createPage(function(page) {
-                _page = page;
-                page.open(aurl, function(status) {
-                    assert.equal(status, 'success');
+        autoLogin(aurl, config.loginActions, function(err, url) {
+            assert.notOk(err);
 
-                    page.render('screen0.png');
-                    page.evaluate(function(formConfig) {
-                        for (var key in formConfig.fields) {
-                            if (formConfig.fields.hasOwnProperty(key)) {
-                                var value = formConfig.fields[key];
-                                var ielems = document.querySelectorAll(key);
-                                for (var k in ielems) {
-                                    if (ielems.hasOwnProperty(k)) {
-                                        var element = ielems[k];
-                                        element.value = value;
-                                    }
-                                }
-                            }
-                        }
+            debug(url);
 
-                        var buttons =
-                            document.querySelectorAll(formConfig.successClick);
-                        buttons[0].click();
-                    }, function() {
-                        //wait for page transition
-                        setTimeout(function() {
-                            done();
-                        }, 1000);
-                        //ph.exit();
-
-                    }, config.automation.shift());
-                });
-            });
-        });
-    });
-
-    it('presents scope form', function(done) {
-        _page.render('screen1.png');
-        _page.set('onUrlChanged', function(url) {
-            //TODO: seems hacky and unreliable
-            //how many redirection will OAuth do
-            //Expect a redirection
-            var intercepted = utils.
-            getQueryParameters(url);
+            var intercepted = utils.getQueryParameters(url);
             intercepted.should.have.property('code');
             state.test['access_code'] = intercepted.code;
 
             done();
         });
-
-        _page.evaluate(function(formConfig) {
-
-            for (var index in formConfig.clicks) {
-                if (formConfig.clicks.hasOwnProperty(index)) {
-                    var value = formConfig.clicks[index];
-                    $(value).click();
-                }
-            }
-
-            $(formConfig.successClick).click();
-
-        }, function() {
-            setTimeout(function() {
-                _ph.exit();
-            }, 2000);
-        }, config.automation.shift());
     });
 });
 

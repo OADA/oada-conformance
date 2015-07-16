@@ -4,9 +4,11 @@
   "description": "OADA Compliance Test Suite",
   "main": "config.js",
   "dependencies": {
+    "bluebird": "^2.9.34",
     "chai": "^1.10.0",
     "chai-json-schema": "^1.1.0",
     "cheerio": "^0.18.0",
+    "debug": "^2.2.0",
     "jsonwebtoken": "^5.0.2",
     "jws-jwk": "^0.1.4",
     "mocha": "^2.2.5",

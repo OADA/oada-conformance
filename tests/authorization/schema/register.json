@@ -1,7 +1,14 @@
 {
     "title": "client registration response document v1",
     "type": "object",
-    "required": ["client_id", "client_id_issued_at", "software_version", "scopes", "redirect_uris", "token_endpoint_auth_method", "grant_types", "response_types", "client_name"],
+    "required": [
+        "client_id",
+        "redirect_uris",
+        "token_endpoint_auth_method",
+        "grant_types",
+        "response_types",
+        "client_name"
+    ],
     "properties": {
         "client_id": {
             "type": "string"
