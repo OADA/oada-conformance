@@ -8,9 +8,8 @@
 var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
-var assert = chai.assert;
-var should = chai.should();
 var cheerio = require('cheerio');
+var expect = chai.expect;
 // var jwt = require('jsonwebtoken');
 // var fs = require('fs');
 // var jws = require('jws-jwk').shim();
@@ -20,6 +19,9 @@ var config = require('../../config.js').authorization;
 var testOptions = require('../../config.js').options;
 //Allow self signed certs
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
+var oadaConfigSchema = require('./schema/oada_configuration.json');
+var oadaClientDiscSchema = require('./schema/oada_client_discovery.json');
 
 var state = {
     test : {}
@@ -40,10 +42,10 @@ describe('Check Pre-requisites', function() {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function(err, res) {
-                    should.not.exist(err);
+                    expect(err).to.be.not.ok;
                     //Make sure it matches the prescribed format
-                    assert.jsonSchema(JSON.parse(res.text),
-                            require('./schema/oada_configuration.json'));
+                    expect(JSON.parse(res.text))
+                        .to.be.jsonSchema(oadaConfigSchema);
                     //save the config doc for later use
                     state.test['oadaConfiguration'] = JSON.parse(res.text);
                     done();
@@ -57,7 +59,7 @@ describe('Check Pre-requisites', function() {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function(err, res) {
-                    should.not.exist(err);
+                    expect(err).to.be.not.ok;
                     // //Make sure it matches the prescribed format
                     /*
                     assert.jsonSchema(JSON.parse(res.text),
@@ -79,10 +81,10 @@ describe('Check Pre-requisites', function() {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function(err, res) {
-                    should.not.exist(err, res.text);
+                    expect(err).to.be.not.ok;
 
-                    assert.jsonSchema(JSON.parse(res.text),
-                            require('./schema/oada_client_discovery.json'));
+                    expect(JSON.parse(res.text))
+                        .to.be.jsonSchema(oadaClientDiscSchema);
 
                     state.test['oada_client_discovery'] = JSON.parse(res.text);
 
@@ -121,7 +123,8 @@ describe('Obtaining token (implicit flow)', function() {
                 .get(path)
                 .redirects(10)
                 .end(function(err, res) {
-                    should.not.exist(err, res.text);
+                    expect(err).to.be.not.ok;
+
                     state.test['login'] = {};
                     var currentURI = config.uri + res.req.path;
                     var $ = cheerio.load(res.text);
@@ -130,7 +133,7 @@ describe('Obtaining token (implicit flow)', function() {
                     var formMethod = $('form').attr('method');
 
                     //Make sure that this login form is doing POST
-                    assert.equal(formMethod.toLowerCase(), 'post');
+                    expect(formMethod.toLowerCase()).to.equal('post');
 
                     state.test.login['fields'] = [];
                     $('form input[type=text],' +
@@ -173,8 +176,9 @@ describe('Obtaining token (implicit flow)', function() {
                     .set('User-Agent', testOptions.userAgentValue)
                     .redirects(0)
                     .send(postdata)
-                    .end(function(err, res) {
-                        should.not.exist(err, res.text);
+                    .end(function(err) {
+                        expect(err).to.be.not.ok;
+
                         done();
                     });
             });
@@ -200,7 +204,8 @@ describe('Obtaining token (implicit flow)', function() {
                     .type('form');
 
                 req.expect(200).end(function(err, res) {
-                    should.not.exist(err, res.text);
+                    expect(err).to.be.not.ok;
+
                     state.test['grantscreen'] = {'html': ''};
                     state.test.grantscreen.html = res.text;
                     done();
@@ -250,14 +255,15 @@ describe('Grant Screen and Obtaining access token', function() {
             .redirects(0)
             .expect(302)
             .end(function(err, res) {
-                should.not.exist(err, res.text);
+                expect(err).to.be.not.ok;
+
                 //intercept the redirection
                 var intercepted =
                     utils.getQueryParameters(res.headers.location);
-                intercepted.should.have.property('access_token');
+                expect(intercepted).to.have.property('access_token');
                 state.test['access_token'] = intercepted['access_token'];
                 // //make sure states are equal
-                assert.equal(state.stateVar, intercepted.state);
+                expect(intercepted.state).to.equal(state.stateVar);
 
                 done();
             });
@@ -293,7 +299,8 @@ describe('Obtain ID token', function() {
             .type('form');
 
         req.expect(200).end(function(err, res) {
-            should.not.exist(err, res.text);
+            expect(err).to.be.not.ok;
+
             $ = cheerio.load(res.text);
             done();
         });
@@ -321,16 +328,18 @@ describe('Obtain ID token', function() {
             .redirects(0)
             .expect(302)
             .end(function(err, res) {
-                should.not.exist(err, res.text);
+                expect(err).to.be.not.ok;
+
                 //intercept the redirection
                 var intercepted = utils.
                                   getQueryParameters(res.headers.location);
-                intercepted.should.have.property('id_token');
+                expect(intercepted).to.have.property('id_token');
                 state.test['id_token'] = intercepted['id_token'];
                 // //make sure states are equal
-                assert.equal(state.stateVar, intercepted.state);
+                expect(intercepted.state).to.equal(state.stateVar);
                 //looks like its encrypted in JWT/JWS form?
                 console.log(state.test['id_token']);
+
                 done();
             });
     });
@@ -348,8 +357,9 @@ describe('Get User Info', function() {
             .set('User-Agent', testOptions.userAgentValue)
             .type('form');
 
-        req.expect(200).end(function(err, res) {
-            should.exist(err, res.text);
+        req.expect(200).end(function(err) {
+            expect(err).to.be.ok;
+
             done();
         });
     });

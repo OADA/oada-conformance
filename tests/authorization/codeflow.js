@@ -9,9 +9,8 @@
 var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
-var assert = chai.assert;
-//var should = chai.should();
 //var cheerio = require('cheerio');
+var expect = chai.expect;
 var fs = require('fs');
 var debug = require('debug')('tests:auth:code');
 
@@ -22,6 +21,9 @@ var testOptions = require('../../config.js').options;
 var autoLogin = require('../../lib/autoLogin.js');
 
 var metadata = require('../../metadata');
+
+var oadaConfigSchema = require('./schema/oada_configuration.json');
+var metadataSchema = require('./schema/register.json');
 
 var KEY_ACCESS_TOKEN = 'access_token';
 
@@ -51,8 +53,8 @@ describe('Check Pre-requisites', function() {
                     if (err) { done(err); }
 
                     //Make sure it matches the prescribed format
-                    assert.jsonSchema(JSON.parse(res.text),
-                            require('./schema/oada_configuration.json'));
+                    expect(JSON.parse(res.text))
+                        .to.be.jsonSchema(oadaConfigSchema);
                     //save the config doc for later use
                     state.test.oadaConfiguration = JSON.parse(res.text);
 
@@ -78,8 +80,8 @@ describe('Check Pre-requisites', function() {
 
                     //check schema
                     state.test.clientInfo = JSON.parse(res.text);
-                    assert.jsonSchema(state.test.clientInfo,
-                            require('./schema/register.json'));
+                    expect(state.test.clientInfo)
+                        .to.be.jsonSchema(metadataSchema);
 
                     done();
                 });
@@ -109,12 +111,12 @@ describe('get access token in code flow process', function() {
         aurl += '/' + '?' + utils.getQueryString(parameters);
 
         autoLogin(aurl, config.loginActions, function(err, url) {
-            assert.notOk(err);
+            expect(err).to.be.not.ok;
 
             debug(url);
 
             var intercepted = utils.getQueryParameters(url);
-            intercepted.should.have.property('code');
+            expect(intercepted).to.have.property('code');
             state.test['access_code'] = intercepted.code;
 
             done();
@@ -161,8 +163,8 @@ describe('Exchanging Access Token Step', function() {
                 if (err) { done(err); }
 
                 try {
-                    JSON.parse(res.text)
-                        .should.not.have.property(KEY_ACCESS_TOKEN);
+                    expect(JSON.parse(res.text))
+                        .to.not.have.property(KEY_ACCESS_TOKEN);
                 } catch (ex) {
                     done();
                 }
@@ -224,8 +226,8 @@ describe('Exchanging Access Token Step', function() {
                     if (err) { done(err); }
 
                     try {
-                        JSON.parse(res.text)
-                            .should.not.have.property(KEY_ACCESS_TOKEN);
+                        expect(JSON.parse(res.text))
+                            .to.not.have.property(KEY_ACCESS_TOKEN);
                     } catch (ex) {
                         //okay
                     }
@@ -257,7 +259,8 @@ describe('Exchanging Access Token Step', function() {
                 if (err) { done(err); }
 
                 state.test.tokenResponse = JSON.parse(res.text);
-                state.test.tokenResponse.should.have.property(KEY_ACCESS_TOKEN);
+                expect(state.test.tokenResponse)
+                    .to.have.property(KEY_ACCESS_TOKEN);
                 /*
                 console.log('ACTOKEN: ',
                         state.test.tokenResponse[KEY_ACCESS_TOKEN])
@@ -289,7 +292,8 @@ describe('Exchanging Access Token Step', function() {
                 if (err) { done(err); }
 
                 var tryJSON = JSON.parse(res.text);
-                tryJSON.should.not.have.property(KEY_ACCESS_TOKEN);
+                expect(tryJSON).to.not.have.property(KEY_ACCESS_TOKEN);
+
                 done();
             });
     });
