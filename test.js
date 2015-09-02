@@ -12,14 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
+var Mocha = require('mocha');
 
-var JWT_FILE = path.join(__dirname, 'software_statement.jwt');
+var mocha = new Mocha({
+    ui: 'bdd',
+    reporter: 'spec',
+    timeout: 2000,
+    bail: false,
+});
 
-module.exports = {
-    'software_statement': fs.readFileSync(JWT_FILE).toString().trim()
-};
+// TODO: Use the test config to include the correct files?
+mocha.addFile('tests/authorization/code.js');
+mocha.addFile('tests/authorization/test.js');
+
+mocha
+    .run(function(errors) {
+
+        // TODO: A more sophisticated final report
+        // tracking: https://github.com/mochajs/mocha/pull/1772
+        if (errors) {
+            console.log('The API is not OADA conformant.');
+        } else {
+            console.log('The API is OADA conformant.');
+        }
+    });

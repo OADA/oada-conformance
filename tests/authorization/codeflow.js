@@ -6,6 +6,7 @@
 *  Tests ability to get ID token
 *
 */
+var _ = require('lodash');
 var request = require('supertest');
 var chai = require('chai');
 chai.use(require('chai-json-schema'));
@@ -15,6 +16,7 @@ var fs = require('fs');
 var path = require('path');
 var debug = require('debug')('tests:auth:code');
 
+var clientAuth = require('jwt-bearer-client-auth');
 var utils = require('../../lib/utils.js');
 //var phantomUtils = require('../../lib/phantom-utils.js');
 var config = require('../../config.js').authorization;
@@ -27,9 +29,6 @@ var oadaConfigSchema = require('./schema/oada_configuration.json');
 var metadataSchema = require('./schema/register.json');
 
 var KEY_ACCESS_TOKEN = 'access_token';
-
-//Allow self signed certs
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 var state = {
     test : {}
@@ -95,7 +94,6 @@ describe('Check Pre-requisites', function() {
 /*
  * Test begins after this point
 */
-
 describe('get access token in code flow process', function() {
     this.timeout(60000);
 
@@ -106,8 +104,7 @@ describe('get access token in code flow process', function() {
             'client_id': state.test.clientInfo['client_id'],
             'state' : state.stateVariable,
             'redirect_uri': state.test.clientInfo['redirect_uris'][0],
-            'scope': 'bookmarks.machines',
-            'prompt': 'consent'
+            'scope': config.scopes.join(' ')
         };
 
         var aurl = state.test.oadaConfiguration['authorization_endpoint'];
@@ -129,31 +126,43 @@ describe('get access token in code flow process', function() {
 
 describe('Exchanging Access Token Step', function() {
     var cert;
-    var secret;
+    var auth;
     var tokenEndpoint;
+    var exchangeParameters;
 
     this.timeout(60000);
 
     before(function() {
         tokenEndpoint = state.test.oadaConfiguration['token_endpoint'];
-        cert = fs.readFileSync(path.join(__dirname, 'certs/private.pem'));
-        secret = utils.generateClientSecret(
+        cert = {
+            kid: 'kjf9iu3nczkjdf9w3',
+            kty: 'PEM',
+            pem: fs.readFileSync(
+                    path.join(__dirname, '../../certs/kjf9iu3nczkjdf9w3.pem'))
+        };
+
+        auth = clientAuth.generate(
                 cert,
                 state.test.clientInfo['client_id'],
+                state.test.clientInfo['client_id'],
                 tokenEndpoint,
-                state.test['access_code'],
-                config.goldClient['key_id']
-        );
+                60,
+                {payload: {jti: state.test['access_code']}});
+
+        exchangeParameters = {
+            'grant_type': 'authorization_code',
+            'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+            'client_assertion': auth,
+            'client_assertion_type':
+                 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+            'client_id': state.test.clientInfo['client_id'],
+            'code': state.test['access_code'],
+        };
     });
 
-    it('should reject bad clientID', function(done) {
-        var parameters = {
-            'grant_type': 'authorization_code',
-            'code': state.test['access_code'],
-            'redirect_uri': config.goldClient['redirect_uri'],
-            'client_id': 'hello@world.com',
-            'client_secret': secret
-        };
+    xit('should reject wrong clientID', function(done) {
+        var parameters = _.clone(exchangeParameters);
+        parameters['client_id'] = parameters['client_id'] + '_incorrect';
 
         var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
@@ -162,24 +171,20 @@ describe('Exchanging Access Token Step', function() {
             .type('form')
             .set('User-Agent', testOptions.userAgentValue)
             .send(parameters)
-            .end(function(err, res) {
-                try {
-                    expect(JSON.parse(res.text))
-                        .to.not.have.property(KEY_ACCESS_TOKEN);
-                } catch (ex) {}
-
-                done();
-            });
+            .expect(401)
+            .end(done);
     });
 
-    it('should reject bad parameters', function(done) {
+    xit('should reject incorrect parameters', function(done) {
         //try wrong parameter
         var parameters = {
             'grant_type': 'authorization_code',
+            'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+            'client_assertion': auth,
+            'client_assertion_type':
+                 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+            'client_id': state.test.clientInfo['client_id'],
             'code': state.test['access_code'] + 'x',
-            'redirect_uri': config.goldClient['redirect_uri'],
-            'client_id': config.goldClient['client_id'],
-            'client_secret': secret
         };
 
         var proto = JSON.stringify(parameters);
@@ -237,21 +242,13 @@ describe('Exchanging Access Token Step', function() {
     });
 
     it('should succeed', function(done) {
-        var parameters = {
-            'grant_type': 'authorization_code',
-            'code': state.test['access_code'],
-            'redirect_uri': state.test.clientInfo['redirect_uris'][0],
-            'client_id': state.test.clientInfo['client_id'],
-            'client_secret': secret
-        };
-
         var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
         request
             .post(postURL)
             .type('form')
             .set('User-Agent', testOptions.userAgentValue)
-            .send(parameters)
+            .send(exchangeParameters)
             .expect(200)
             .end(function(err, res) {
                 if (err) { return done(err); }
@@ -271,13 +268,6 @@ describe('Exchanging Access Token Step', function() {
         if (state.test.tokenResponse[KEY_ACCESS_TOKEN] === undefined) {
             this.skip();
         }
-        var parameters = {
-            'grant_type': 'authorization_code',
-            'code': state.test['access_code'],
-            'redirect_uri': config.goldClient['redirect_uri'],
-            'client_id': config.goldClient['client_id'],
-            'client_secret': secret
-        };
 
         var postURL = utils.getRelativePath(config.uri, tokenEndpoint);
 
@@ -285,15 +275,9 @@ describe('Exchanging Access Token Step', function() {
             .post(postURL)
             .type('form')
             .set('User-Agent', testOptions.userAgentValue)
-            .send(parameters)
-            .end(function(err, res) {
-                if (err) { return done(err); }
-
-                var tryJSON = JSON.parse(res.text);
-                expect(tryJSON).to.not.have.property(KEY_ACCESS_TOKEN);
-
-                done();
-            });
+            .send(exchangeParameters)
+            .expect(401)
+            .end(done);
     });
 });
 
@@ -302,8 +286,8 @@ describe('Exchanging Access Token Step', function() {
 //      var parameters = {
 //          'grant_type': 'authorization_code',
 //          'code': state.test['access_code'] + 'x',
-//          'redirect_uri': config.goldClient['redirect_uri'],
-//          'client_id': config.goldClient['client_id'],
+//          'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+//          'client_id': state.test.clientInfo['client_id'],
 //          'client_secret': secret
 //      };
 
@@ -362,8 +346,8 @@ describe('Exchanging Access Token Step', function() {
 //      var parameters = {
 //          'grant_type': 'authorization_code',
 //          'code': state.test['access_code'],
-//          'redirect_uri': config.goldClient['redirect_uri'],
-//          'client_id': config.goldClient['client_id'],
+//          'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+//          'client_id': state.test.clientInfo['client_id'],
 //          'client_secret': secret
 //      };
 
@@ -385,8 +369,8 @@ describe('Exchanging Access Token Step', function() {
 //      var parameters = {
 //          'grant_type': 'authorization_code',
 //          'code': state.test['access_code'],
-//          'redirect_uri': config.goldClient['redirect_uri'],
-//          'client_id': config.goldClient['client_id'],
+//          'redirect_uri': state.test.clientInfo['redirect_uris'][0],
+//          'client_id': state.test.clientInfo['client_id'],
 //          'client_secret': secret
 //      };
 

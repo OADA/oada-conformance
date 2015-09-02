@@ -10,7 +10,10 @@
     "cheerio": "^0.18.0",
     "debug": "^2.2.0",
     "jsonwebtoken": "^5.0.2",
+    "jwt-bearer-client-auth": "^0.3.0",
+    "lodash": "^3.10.1",
     "mocha": "^2.2.5",
+    "mocha-steps": "0.0.1",
     "phantom": "^0.7.2",
     "phantomjs": "^1.9.17",
     "supertest": "^1.0.1"

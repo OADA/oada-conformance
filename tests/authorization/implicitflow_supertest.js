@@ -71,7 +71,7 @@ describe('Check Pre-requisites', function() {
         });
     });
 
-    describe('Exists .well_known/oada-client-discovery', function() {
+    xdescribe('Exists .well_known/oada-client-discovery', function() {
 
         it('should respond w/ oada-client-discovery document', function(done) {
             request
