@@ -1,3 +1,6 @@
 --reporter spec
 --ui bdd
-./**/*.js
+--slow 500
+--timeout 5000
+--recursive
+**/*.spec.js
