@@ -3,11 +3,19 @@
 var chai = require('chai');
 var expect = chai.expect;
 
+var _ = require('lodash');
+
 var config = require('../config.js').authorization;
 var auth = require('./auth.js');
 var metadata = require('../metadata.js');
 
 var wellKnown = require('./well-known.js');
+
+var TYPES = [
+    'token',
+    'code',
+    'id_token'
+];
 
 describe('auth', function() {
     before('need oada-configuration', function() {
@@ -68,47 +76,46 @@ describe('auth', function() {
                 });
         });
 
+        var types = config.types || TYPES;
         var logins = Object.keys(config.logins);
-        logins.forEach(function(login) {
-            // TODO: Problay unroll this loop
+        // Loop over their combinations
+        _.forEach(logins, function(login) { _.forEach(types, function(type) {
             var n = config.logins[login].fail ? 'not ' : '';
-            ['code', 'token', 'id_token'].forEach(function(type) {
-                var fragOrQuery = type === 'code' ? 'query' : 'fragment';
-                var prop = type === 'token' ? 'access_token' : type;
-                it('should ' + n + 'give ' + type + ' for ' + login,
-                    function() {
-                        var state = '1234';
+            var fragOrQuery = type === 'code' ? 'query' : 'fragment';
+            var prop = type === 'token' ? 'access_token' : type;
 
-                        var redir = auth._getRedirect(
-                            this.endpoint,
-                            type,
-                            this.clientData,
-                            login,
-                            state
-                        );
+            step('should ' + n + 'give ' + type + ' for ' + login, function() {
+                var state = '1234';
 
-                        if (config.logins[login].fail) {
-                            return redir.catch(function(err) {
-                                // TODO: More specific about error?
-                                expect(err).to.be.ok;
-                            });
-                        } else {
-                            return redir.then(function(redir) {
-                                expect(redir[fragOrQuery])
-                                    .to.have.property(prop);
-                            });
-                        }
-                    }
+                var redir = auth._getRedirect(
+                    this.endpoint,
+                    type,
+                    this.clientData,
+                    login,
+                    state
                 );
-            });
-        });
-    });
 
-    /*
-    it('should get code', getCode);
-    it('should fail to get token second time', function() {
-        expect(getToken()).to.not.throw(Error);
-        expect(getToken()).to.throw(Error);
-    })
-    */
+                if (config.logins[login].fail) {
+                    return redir.catch(function(err) {
+                        // TODO: More specific about error?
+                        expect(err).to.be.ok;
+                    });
+                } else {
+                    return redir.get(fragOrQuery)
+                        .then(function(params) {
+                            expect(params)
+                                .to.have.property(prop);
+                            expect(params.state)
+                                .to.equal(state);
+                        });
+                }
+            });
+
+            if (!n && type === 'code') {
+                xstep('should given token for code for ' + login, function() {
+
+                });
+            }
+        });});
+    });
 });

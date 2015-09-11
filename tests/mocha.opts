@@ -1,4 +1,5 @@
 --reporter spec
+--require mocha-steps
 --ui bdd
 --slow 500
 --timeout 5000

@@ -15,5 +15,9 @@
     "freeze": true,
     "eqeqeq": true,
     "expr": true,
-    "mocha": true
+    "mocha": true,
+    "globals": {
+        "step": false,
+        "xstep": false
+    }
 }

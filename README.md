@@ -6,6 +6,6 @@ Automated tests for OADA API
 ## Running all tests ##
     npm run check
 
-## Running authorization tests ##
-    npm run check -- authorization
+## Can pass mocha options (e.g.) ##
+    npm run check -- --grep well-known
 

@@ -8,6 +8,8 @@ module.exports = {
         uri: 'https://identity.oada-dev.com',
     },
     authorization: {
+        // TODO: Make flows (change to implicit/code?)
+        types: ['token', 'code', 'id_token'],
         logins: {
             andy: {
                 scopes: ['bookmarks.machines'],
@@ -67,6 +69,6 @@ module.exports = {
         }
     },
     options: {
-        userAgentValue : 'OADA-Compliance-Test/1.1 (mocha; node-js)'
+        userAgent: 'OADA-Conformance-Tests/1.1 (mocha; node-js)'
     }
 };

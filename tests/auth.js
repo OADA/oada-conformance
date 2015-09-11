@@ -15,7 +15,11 @@ var debug = require('debug')('oada-conformance:auth');
 //chai.use(require('chai-json-schema'));
 //var metadataSchema = require('./schema/register.json');
 var config = require('../config.js').authorization;
+var options = require('../config.js').options || {};
+
 var autoLogin = require('../lib/autoLogin.js');
+autoLogin.USER_AGENT =
+    options.userAgent || 'OADA-Conformance-Tests/1.1 (mocha; node-js)';
 
 // Do ouath-dyn-reg
 var register = _.memoize(function register(endpoint, metadata) {
@@ -72,7 +76,13 @@ module.exports._getRedirect = getRedirect;
 /* NYI
 // Exchange access code for access token
 function getToken(code) {
-    return token;
+    return Promise.try({
+        var assertion = clientAuth.generate(
+
+        );
+        var query = {
+        };
+    });
 };
 module.exports._getToken = getToken;
 
