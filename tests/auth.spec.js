@@ -67,6 +67,13 @@ describe('auth', function() {
             expect(this.endpoint).to.be.a('string');
         });
 
+        if (config.types.indexOf('code') >= 0) {
+            before('need token endpoint', function() {
+                this.tokEndpoint = this.oadaConfig['token_endpoint'];
+                expect(this.tokEndpoint).to.be.a('string');
+            });
+        }
+
         before('need registered client data', function() {
             var self = this;
             return auth._register(this.regEndpoint, metadata)
@@ -79,43 +86,69 @@ describe('auth', function() {
         var types = config.types || TYPES;
         var logins = Object.keys(config.logins);
         // Loop over their combinations
-        _.forEach(logins, function(login) { _.forEach(types, function(type) {
-            var n = config.logins[login].fail ? 'not ' : '';
-            var fragOrQuery = type === 'code' ? 'query' : 'fragment';
-            var prop = type === 'token' ? 'access_token' : type;
+        _.forEach(logins, function(login) { describe('login: ' + login,
+            function() {_.forEach(types, function(type) {
+                var n = config.logins[login].fail ? 'not ' : '';
+                var fragOrQuery = type === 'code' ? 'query' : 'fragment';
+                var prop = type === 'token' ? 'access_token' : type;
 
-            step('should ' + n + 'give ' + type + ' for ' + login, function() {
-                var state = '1234';
+                step('should ' + n + 'give ' + type + ' for ' + login,
+                    function(done) { // step doesn't work with promises...
+                        var state = '1234';
+                        var self = this;
 
-                var redir = auth._getRedirect(
-                    this.endpoint,
-                    type,
-                    this.clientData,
-                    login,
-                    state
+                        var redir = auth._getRedirect(
+                            this.endpoint,
+                            type,
+                            this.clientData,
+                            login,
+                            state
+                        );
+
+                        var p;
+                        if (config.logins[login].fail) {
+                            p = redir.catch(function(err) {
+                                // TODO: More specific about error?
+                                expect(err).to.be.ok;
+                            });
+                        } else {
+                            p = redir.get(fragOrQuery)
+                                .then(function(params) {
+                                    expect(params)
+                                        .to.have.property(prop);
+                                    expect(params.state)
+                                        .to.equal(state);
+
+                                    self[prop] = params[prop];
+                                });
+                        }
+
+                        return p.nodeify(done);
+                    }
                 );
 
-                if (config.logins[login].fail) {
-                    return redir.catch(function(err) {
-                        // TODO: More specific about error?
-                        expect(err).to.be.ok;
-                    });
-                } else {
-                    return redir.get(fragOrQuery)
-                        .then(function(params) {
-                            expect(params)
-                                .to.have.property(prop);
-                            expect(params.state)
-                                .to.equal(state);
-                        });
+                if (!n && type === 'code') {
+                    step('should given token for code for ' + login,
+                        function(done) {
+                            var code = auth._getToken(
+                                this.tokEndpoint,
+                                this.clientData,
+                                this.code
+                            );
+
+                            return code.get('body')
+                                .then(function(token) {
+                                    // TODO: Token schema?
+                                    expect(token)
+                                        .to.have.property('access_token');
+                                    expect(token)
+                                        .to.have.property('token_type');
+                                })
+                                .nodeify(done);
+                        }
+                    );
                 }
             });
-
-            if (!n && type === 'code') {
-                xstep('should given token for code for ' + login, function() {
-
-                });
-            }
         });});
     });
 });

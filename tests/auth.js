@@ -11,9 +11,12 @@ var request = require('superagent-bluebird-promise');
 var URI = require('URIjs');
 var debug = require('debug')('oada-conformance:auth');
 
+var clientAuth = require('jwt-bearer-client-auth');
+
 //TODO: Use oada-formats?
 //chai.use(require('chai-json-schema'));
 //var metadataSchema = require('./schema/register.json');
+var keys = require('../certs');
 var config = require('../config.js').authorization;
 var options = require('../config.js').options || {};
 
@@ -73,19 +76,37 @@ function getRedirect(endpoint, type, clientData, authId, state) {
 }
 module.exports._getRedirect = getRedirect;
 
-/* NYI
 // Exchange access code for access token
-function getToken(code) {
-    return Promise.try({
+function getToken(endpoint, clientData, code) {
+    return Promise.try(function() {
         var assertion = clientAuth.generate(
-
+            keys.priv,
+            clientData['client_id'],
+            clientData['client_id'],
+            endpoint,
+            60,
+            {payload: {jti: code}}
         );
         var query = {
+            'grant_type': 'authorization_code',
+            // TODO: How to handle multiple redirect_uris?
+            'redirect_uri': clientData['redirect_uris'][0],
+            'client_assertion': assertion,
+            'client_assertion_type':
+                'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+            'client_id': clientData['client_id'],
+            'code': code
         };
+
+        return request.post(endpoint)
+            .type('form')
+            .send(query)
+            .promise();
     });
-};
+}
 module.exports._getToken = getToken;
 
+/* NYI
 // Only really runs once
 // TODO: Support hardcoded token
 module.exports.getAuth = _.memoize(function getAuth(authNum) {
