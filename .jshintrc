@@ -11,7 +11,6 @@
     "unused": true,
     "strict": true,
     "trailing": true,
-    "sub": true,
     "freeze": true,
     "eqeqeq": true,
     "expr": true,
