@@ -72,6 +72,8 @@ describe('auth', function() {
     });
 
     describe('getting token', function() {
+        var types = config.types || TYPES;
+
         before('need registration_endpoint', function() {
             this.regEndpoint = this.oadaConfig['registration_endpoint'];
             expect(this.regEndpoint).to.be.a('string');
@@ -82,7 +84,7 @@ describe('auth', function() {
             expect(this.endpoint).to.be.a('string');
         });
 
-        if (config.types.indexOf('code') >= 0) {
+        if (types.indexOf('code') >= 0) {
             before('need token endpoint', function() {
                 this.tokEndpoint = this.oadaConfig['token_endpoint'];
                 expect(this.tokEndpoint).to.be.a('string');
@@ -98,72 +100,74 @@ describe('auth', function() {
                 });
         });
 
-        var types = config.types || TYPES;
+        // Loop over login x type combinations
         var logins = Object.keys(config.logins);
-        // Loop over their combinations
-        _.forEach(logins, function(login) { describe('login: ' + login,
-            function() {_.forEach(types, function(type) {
-                var n = config.logins[login].fail ? 'not ' : '';
-                var fragOrQuery = type === 'code' ? 'query' : 'fragment';
-                var prop = type === 'token' ? 'access_token' : type;
+        _.forEach(logins, function(login) {
+            describe('login: ' + login, function() {
+                _.forEach(types, function(type) {
+                    genTokenTest(type, login);
+                });
+            });
+        });
 
-                step('should ' + n + 'give ' + type + ' for ' + login,
-                    function(done) { // step doesn't work with promises...
-                        var state = '1234';
-                        var self = this;
+        function genTokenTest(type, login) {
+            var n = config.logins[login].fail ? 'not ' : '';
+            var fragOrQuery = type === 'code' ? 'query' : 'fragment';
+            var prop = type === 'token' ? 'access_token' : type;
 
-                        var redir = auth._getRedirect(
-                            this.endpoint,
-                            type,
-                            this.clientData,
-                            login,
-                            state
-                        );
+            // step doesn't work with Promises...
+            step('should ' + n + 'give ' + type, function(done) {
+                var state = '1234';
+                var self = this;
 
-                        var p;
-                        if (config.logins[login].fail) {
-                            p = redir.catch(function(err) {
-                                // TODO: More specific about error?
-                                expect(err).to.be.ok;
-                            });
-                        } else {
-                            p = redir.get(fragOrQuery)
-                                .then(function(params) {
-                                    expect(params)
-                                        .to.have.property(prop);
-                                    expect(params.state)
-                                        .to.equal(state);
-
-                                    self[prop] = params[prop];
-                                });
-                        }
-
-                        return p.nodeify(done);
-                    }
+                var redir = auth._getRedirect(
+                    this.endpoint,
+                    type,
+                    this.clientData,
+                    login,
+                    state
                 );
 
-                if (!n && type === 'code') {
-                    step('should given token for code for ' + login,
-                        function(done) {
-                            var code = auth._getToken(
-                                this.tokEndpoint,
-                                this.clientData,
-                                this.code
-                            );
+                var p;
+                if (config.logins[login].fail) {
+                    p = redir.catch(function(err) {
+                        // TODO: More specific about error?
+                        expect(err).to.be.ok;
+                    });
+                } else {
+                    p = redir.get(fragOrQuery)
+                        .then(function(params) {
+                            expect(params).to.have.property(prop);
+                            expect(params.state).to.equal(state);
 
-                            return code.get('body')
-                                .then(function(token) {
-                                    // TODO: Token schema?
-                                    expect(token)
-                                        .to.have.property('access_token');
-                                    expect(token)
-                                        .to.have.property('token_type');
-                                })
-                                .nodeify(done);
-                        }
-                    );
+                            self[prop] = params[prop];
+                        });
                 }
+
+                return p.nodeify(done);
             });
-        });});
+
+            if (!n && type === 'code') {
+                step('should given token for code for', function(done) {
+                    var token = auth._getToken(
+                        this.tokEndpoint,
+                        this.clientData,
+                        this.code
+                    );
+
+                    return token.get('body')
+                        .then(function(token) {
+                            // TODO: Token schema?
+                            expect(token).to.have.property('access_token');
+                            expect(token).to.have.property('token_type');
+                        })
+                        .nodeify(done);
+                });
+
+                xstep('should only redeem code once');
+
+                xstep('should invalidate token when code reused');
+            }
+        }
     });
 });

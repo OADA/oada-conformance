@@ -15,6 +15,8 @@
 
 'use strict';
 
+var _ = require('lodash');
+
 var wellKnown = require('./well-known.js');
 
 var DOCS = [
@@ -23,11 +25,16 @@ var DOCS = [
 ];
 
 describe('well-known documents', function() {
-    DOCS.forEach(function(doc) {
+    _.forEach(DOCS, function(doc) {
         describe(doc, function() {
+            // TODO: Remove this test once others are implemented?
             it('should exist', function() {
                 return wellKnown.get(doc);
             });
+
+            xit('should match schema');
+
+            xit('should have CORS enabled');
         });
     });
 });
