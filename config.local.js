@@ -19,19 +19,18 @@ require('bluebird').longStackTraces();
 
 module.exports = {
     server: {
-        //uri: 'https://localhost:3000',
-        uri: 'https://identity.oada-dev.com',
+        uri: 'https://localhost:3000'
     },
     authorization: {
         logins: {
-            andy: {
+            frank: {
                 scopes: ['bookmarks.machines'],
                 actions: [
                     [
                         {
                             id: '[name="username"]',
                             type: 'type',
-                            value: 'andy',
+                            value: 'frank',
                         },
                         {
                             id: '[name="password"]',
@@ -82,7 +81,7 @@ module.exports = {
         }
     },
     bookmarks: {
-        login: 'andy'
+        login: 'frank'
     },
     options: {
         origin: 'https://openag.io'

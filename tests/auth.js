@@ -22,7 +22,7 @@ var expect = chai.expect;
 
 var Promise = require('bluebird');
 var _ = require('lodash');
-var request = require('superagent-bluebird-promise');
+var request = require('./request.js');
 var URI = require('URIjs');
 var debug = require('debug')('oada-conformance:auth');
 
@@ -32,12 +32,11 @@ var clientAuth = require('jwt-bearer-client-auth');
 //chai.use(require('chai-json-schema'));
 //var metadataSchema = require('./schema/register.json');
 var keys = require('../certs');
-var config = require('../config.js').authorization;
-var options = require('../config.js').options || {};
+var config = require('../config.js').get('authorization');
+var options = require('../config.js').get('options');
 
 var autoLogin = require('../lib/autoLogin.js');
-autoLogin.USER_AGENT =
-    options.userAgent || 'OADA-Conformance-Tests/1.1 (mocha; node-js)';
+autoLogin.USER_AGENT = options.userAgent;
 
 // Do ouath-dyn-reg
 var register = _.memoize(function register(endpoint, metadata) {
@@ -121,16 +120,44 @@ function getToken(endpoint, clientData, code) {
 }
 module.exports._getToken = getToken;
 
-/* NYI
 // Only really runs once
-// TODO: Support hardcoded token
-module.exports.getAuth = _.memoize(function getAuth(authNum) {
-    var clientMetadata = register(metadata);
-    getcode();
-    getToken();
+var wellKnown = require('./well-known.js');
+var metadata = require('../metadata.js');
+module.exports.getAuth = _.memoize(function getAuth(authId) {
+    // Support hardcoded token
+    if (config.logins[authId].token) {
+        return Promise.resolve(config.logins[authId].token);
+    }
+
+    var clientData = wellKnown.get('oada-configuration')
+        .get('registration_endpoint')
+        .then(function(endpoint) {
+            return register(endpoint, metadata).get('body');
+        });
+    var endpoint = wellKnown.get('oada-configuration')
+            .get('authorization_endpoint');
+    // Perefer code flow?
+    var type = _.includes(config.types, 'code') ? 'code' : 'token';
+
+    return Promise.join(endpoint, type, clientData, authId, getRedirect)
+        .get(type === 'code' ? 'query' : 'fragment')
+        .then(function exchangeCode(res) {
+            if (type === 'code') {
+                var endpoint = wellKnown.get('oada-configuration')
+                        .get('token_endpoint');
+
+                return Promise.join(endpoint, clientData, res.code, getToken)
+                    .get('body');
+            }
+
+            return res;
+        })
+        .then(function headerValue(res) {
+            return res['token_type'] + ' ' + res['access_token'];
+        });
 });
 
-
+/* NYI
 // Keep track of conformance requirements
 var criteria = {
     didDynReg: undefined

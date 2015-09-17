@@ -13,17 +13,19 @@
  * limitations under the License.
  */
 
-'use strict';
-
-var nconf = require('nconf');
-
-nconf.env('__');
-
-// Default to testing identity.oada-dev.com
-var config = nconf.get('CONFIG') || './config.local.js';
-nconf.use('config', {type: 'literal', store: require(config)});
-
-// Load config defaults
-nconf.defaults(require('./config.defaults.js'));
-
-module.exports = nconf;
+module.exports = {
+    server: {
+    },
+    authorization: {
+        // TODO: Make flows (change to implicit/code?)
+        // TODO: Separate id_token test
+        types: ['token', 'code', 'id_token'],
+        logins: {
+        },
+    },
+    bookmarks: {
+    },
+    options: {
+        userAgent: 'OADA-Conformance-Tests/1.1 (mocha; node-js)'
+    }
+};

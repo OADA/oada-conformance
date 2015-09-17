@@ -15,15 +15,32 @@
 
 'use strict';
 
-var nconf = require('nconf');
+var request = require('superagent-bluebird-promise');
+var methods = require('methods');
+var _ = require('lodash');
 
-nconf.env('__');
+var options = require('../config.js').get('options');
 
-// Default to testing identity.oada-dev.com
-var config = nconf.get('CONFIG') || './config.local.js';
-nconf.use('config', {type: 'literal', store: require(config)});
+function setup(req) {
+    req = req.set('User-Agent', options.userAgent);
 
-// Load config defaults
-nconf.defaults(require('./config.defaults.js'));
+    if (options.origin) {
+        req = req.set('Origin', options.origin);
+    }
 
-module.exports = nconf;
+    return req;
+}
+
+_.forEach(methods, function(method) {
+    method = method === 'delete' ? 'del' : method;
+
+    var fun = request[method];
+
+    request[method] = function() {
+        var req = fun.apply(request, arguments);
+
+        return setup(req);
+    };
+});
+
+module.exports = request;

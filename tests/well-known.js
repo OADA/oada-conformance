@@ -17,9 +17,9 @@
 
 var debug = require('debug')('oada-conformance:well-known');
 var memoize = require('lodash').memoize;
-var request = require('superagent-bluebird-promise');
+var request = require('./request.js');
 
-var config = require('../config.js').server;
+var config = require('../config.js').get('server');
 
 function get(doc) {
     debug(config.uri + '/.well-known/' + doc);

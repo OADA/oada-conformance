@@ -20,17 +20,11 @@ var expect = chai.expect;
 
 var _ = require('lodash');
 
-var config = require('../config.js').authorization;
+var config = require('../config.js').get('authorization');
 var auth = require('./auth.js');
 var metadata = require('../metadata.js');
 
 var wellKnown = require('./well-known.js');
-
-var TYPES = [
-    'token',
-    'code',
-    'id_token'
-];
 
 describe('auth', function() {
     before('need oada-configuration', function() {
@@ -72,7 +66,7 @@ describe('auth', function() {
     });
 
     describe('getting token', function() {
-        var types = config.types || TYPES;
+        var types = config.types;
 
         before('need registration_endpoint', function() {
             this.regEndpoint = this.oadaConfig['registration_endpoint'];
