@@ -101,6 +101,9 @@ function getToken(endpoint, clientData, code) {
             60,
             {payload: {jti: code}}
         );
+        debug('Sending client assertion:');
+        debug(assertion);
+
         var query = {
             'grant_type': 'authorization_code',
             // TODO: How to handle multiple redirect_uris?

@@ -152,8 +152,8 @@ describe('auth', function() {
                     return token.get('body')
                         .then(function(token) {
                             // TODO: Token schema?
-                            expect(token).to.have.property('access_token');
-                            expect(token).to.have.property('token_type');
+                            expect(token)
+                                .to.include.keys('access_token', 'token_type');
                         })
                         .nodeify(done);
                 });
@@ -161,7 +161,13 @@ describe('auth', function() {
                 xstep('should only redeem code once');
 
                 xstep('should invalidate token when code reused');
+
             }
+
+            // http://self-issued.info/docs/
+            //      draft-ietf-oauth-jwt-bearer.html#GrantProcessing
+            // http://tools.ietf.org/html/rfc6749#section-5.2
+            xstep('should have correct error response');
         }
     });
 });
