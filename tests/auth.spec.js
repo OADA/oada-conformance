@@ -19,6 +19,7 @@ var chai = require('chai');
 var expect = chai.expect;
 
 var _ = require('lodash');
+var debug = require('debug')('oada-conformance:auth-tests');
 
 var config = require('../config.js').get('authorization');
 var auth = require('./auth.js');
@@ -130,6 +131,7 @@ describe('auth', function() {
                     });
                 } else {
                     p = redir.get(fragOrQuery)
+                        .tap(debug)
                         .then(function(params) {
                             expect(params).to.have.property(prop);
                             expect(params.state).to.equal(state);
@@ -142,7 +144,7 @@ describe('auth', function() {
             });
 
             if (!n && type === 'code') {
-                step('should given token for code for', function(done) {
+                step('should given token for code', function(done) {
                     var token = auth._getToken(
                         this.tokEndpoint,
                         this.clientData,
@@ -150,6 +152,7 @@ describe('auth', function() {
                     );
 
                     return token.get('body')
+                        .tap(debug)
                         .then(function(token) {
                             // TODO: Token schema?
                             expect(token)
