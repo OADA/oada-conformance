@@ -36,20 +36,25 @@ describe('auth', function() {
             });
     });
 
-    describe('oauth-dyn-reg', function() {
+    // https://tools.ietf.org/html/rfc7591
+    describe('oauth-dyn-reg (rfc7591)', function() {
         before('need registration_endpoint', function() {
             this.endpoint = this.oadaConfig['registration_endpoint'];
             expect(this.endpoint).to.be.a('string');
         });
 
+        // https://tools.ietf.org/html/rfc7591#section-3.2.1
+        // https://tools.ietf.org/html/rfc7591#section-2
         it('should support registering with valid metadata', function() {
             return auth._register(this.endpoint, metadata).then(function(res) {
                 expect(res.status).to.equal(201);
+                expect(res.type).to.equal('application/json');
                 //check schema
                 //expect(res.body).to.be.jsonSchema(metadataSchema);
             });
         });
 
+        // https://tools.ietf.org/html/rfc7591#section-3.2.2
         //TODO: Is this required?
         it('should reject invalid metadata', function() {
             return auth._register(this.endpoint, {}).catch(function(err) {
@@ -167,8 +172,7 @@ describe('auth', function() {
 
             }
 
-            // http://self-issued.info/docs/
-            //      draft-ietf-oauth-jwt-bearer.html#GrantProcessing
+            // https://tools.ietf.org/html/rfc7523#section-3.1
             // http://tools.ietf.org/html/rfc6749#section-5.2
             xstep('should have correct error response');
         }
