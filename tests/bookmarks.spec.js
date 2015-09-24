@@ -49,7 +49,16 @@ describe('bookmarks', function() {
     });
 
     it('should support getting subdocuments', function() {
-        return resources.getAll('bookmarks', this.token);
+        var SUB_TIMEOUT = 100; // Add to timeout for each subdocument?
+        var self = this;
+
+        return resources.getAll('bookmarks', this.token, function(id, res) {
+            // TODO: Check schema?
+            expect(res).to.have.property('body');
+
+            // Increase timeout
+            self.timeout(self.timeout() + SUB_TIMEOUT);
+        });
     });
 
     xit('should have CORS enabled');

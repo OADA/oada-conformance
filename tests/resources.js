@@ -25,6 +25,7 @@ var expect = require('chai').expect;
 
 var wellKnown = require('./well-known.js');
 
+// Get a resource
 var get = _.memoize(function get(id, token) {
     var uri = wellKnown.get('oada-configuration')
         .get('oada_base_uri')
@@ -52,13 +53,18 @@ var get = _.memoize(function get(id, token) {
         });
 });
 
-function getAll(id, token) {
+// Get a resource and all subdocuments
+function getAll(id, token, subDocCb) {
     var ids = [];
+    subDocCb = subDocCb || _.noop;
 
-    return _getAll(id, token);
+    return _getAll(id);
 
-    function _getAll(id, token) {
-        var res = get(id, token);
+    function _getAll(id) {
+        var res = get(id, token).tap(function(res) {
+            // Call callback on each subdocument
+            return subDocCb(id, res);
+        });
 
         return res.get('body').then(function getSubDocs(res) {
             debug('Got resource: ' + id);
@@ -82,7 +88,7 @@ function getAll(id, token) {
             }
 
             return _.map(res, function(val, key) {
-                return getAll(id + '/' + key, token);
+                return _getAll(id + '/' + key);
             });
         }).props().return(res);
     }
