@@ -52,25 +52,40 @@ var get = _.memoize(function get(id, token) {
         });
 });
 
-// TODO: Detect cycles
 function getAll(id, token) {
-    var res = get(id, token);
+    var ids = [];
 
-    return res.get('body').then(function getSubDocs(res) {
-        debug('Got resource: ' + id);
-        debug(res);
+    return _getAll(id, token);
 
-        expect(res).to.exist;
+    function _getAll(id, token) {
+        var res = get(id, token);
 
-        // Don't get subparts of strings
-        if (typeof res === 'string') {
-            return [];
-        }
+        return res.get('body').then(function getSubDocs(res) {
+            debug('Got resource: ' + id);
+            debug(res);
 
-        return _.map(res, function(val, key) {
-            return getAll(id + '/' + key, token);
-        });
-    }).props().return(res);
+            // Find already retrieved subdocuments
+            // TODO: Should this only check for cyles instead?
+            var _id = res._id;
+            if (_id !== undefined && _.includes(ids, _id)) {
+                debug('Found _id: ' + _id + ' thorugh multiple parents');
+                return {};
+            } else {
+                ids.push(_id);
+            }
+
+            expect(res).to.exist;
+
+            // Don't get subparts of strings
+            if (typeof res === 'string') {
+                return {};
+            }
+
+            return _.map(res, function(val, key) {
+                return getAll(id + '/' + key, token);
+            });
+        }).props().return(res);
+    }
 }
 
 module.exports.get = get;
