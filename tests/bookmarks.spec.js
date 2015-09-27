@@ -17,12 +17,21 @@
 
 var Promise = require('bluebird');
 var expect = require('chai').expect;
+var debug = require('debug')('oada-conformance:bookmarks.spec');
 
 var auth = require('./auth.js');
 var resources = require('./resources.js');
 var config = require('../config.js').get('bookmarks');
 
+var Formats = require('oada-formats');
+var formats = new Formats();
+var packs = require('../config.js').get('options:oadaFormatsPackages') || [];
+packs.forEach(function(pack) {
+    formats.use(require(pack));
+});
+
 describe('bookmarks', function() {
+
     before('need token for login ' + config.login, function() {
         var self = this;
 
@@ -32,10 +41,11 @@ describe('bookmarks', function() {
     });
 
     it('should exist', function() {
-        // TODO: Check schema?
         var bookmarks = resources.get('bookmarks', this.token);
 
-        return bookmarks.get('body');
+        return formats
+            .model('application/vnd.oada.bookmarks.1+json')
+            .call('validate', bookmarks.get('body'));
     });
 
     it('should be a resource', function() {
@@ -58,6 +68,25 @@ describe('bookmarks', function() {
 
             // Increase timeout
             self.timeout(self.timeout() + SUB_TIMEOUT);
+
+            // Only validate resources at their root
+            var cLocation = res.res.headers['content-location'];
+            if (cLocation && cLocation.match(/^.*\/resources\/[^\/]+\/?$/) &&
+                    !res.request.url.match(/_meta$/)) {
+                return formats
+                    .model(res.type)
+                    .call('validate', res.body)
+                    .catch(Formats.MediaTypeNotFoundError, function(e) {
+                        debug('Model for ' + e.message + ' not found');
+                    })
+                    .catch(Formats.ValidationError, function(e) {
+                        debug(res.request.url + ' had validation error: ' +
+                                e.message);
+
+                        // How to do this without killing the whole operation?
+                        //throw e;
+                    });
+            }
         });
     });
 
