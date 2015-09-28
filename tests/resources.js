@@ -18,7 +18,7 @@
 var Promise = require('bluebird');
 var _ = require('lodash');
 var request = require('./request.js');
-var URI = require('URIjs');
+var URI = require('urijs');
 var debug = require('debug')('oada-conformance:resources');
 
 var expect = require('chai').expect;
