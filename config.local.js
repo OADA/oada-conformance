@@ -84,6 +84,7 @@ module.exports = {
         login: 'frank'
     },
     options: {
-        origin: 'https://openag.io'
+        origin: 'https://openag.io',
+        oadaFormatsPackages: ['valleyix-formats']
     }
 };
