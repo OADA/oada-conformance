@@ -44,12 +44,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/OADA/oada-compliance.git"
+    "url": "https://github.com/OADA/oada-conformance.git"
   },
-  "author": "Pat S. Sabpisal",
+  "author": {
+    "name": "Alex Layton",
+    "email": "alex@layton.in",
+    "url": "http://alex.layton.in"
+  },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/OADA/oada-compliance/issues"
+    "url": "https://github.com/OADA/oada-conformance/issues"
   },
-  "homepage": "https://github.com/OADA/oada-compliance"
+  "homepage": "https://github.com/OADA/oada-conformance"
 }
