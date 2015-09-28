@@ -18,8 +18,8 @@
     "mocha": "^2.2.5",
     "mocha-steps": "0.0.1",
     "nconf": "^0.7.2",
+    "node-horseman": "^2.1.0",
     "pem-jwk": "^1.5.1",
-    "phantom": "^0.7.2",
     "phantomjs": "^1.9.17",
     "superagent": "^1.4.0",
     "superagent-bluebird-promise": "^2.1.0"
