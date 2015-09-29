@@ -219,7 +219,7 @@ describe('auth', function() {
                 // http://tools.ietf.org/html/rfc6749#section-4.2.2.1
                 it('should be correct', function() {
                     var state = '1234';
-                    var data = this.clientData;
+                    var data = _.cloneDeep(this.clientData);
                     // Make client_id wrong
                     data['client_id'] += 'foo';
 
