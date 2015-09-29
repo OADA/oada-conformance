@@ -19,7 +19,7 @@ module.exports = {
     authorization: {
         // TODO: Make flows (change to implicit/code?)
         // TODO: Separate id_token test
-        types: ['token', 'code', 'id_token'],
+        types: ['token', 'code'], //'id_token'],
         logins: {
         },
     },

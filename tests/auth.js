@@ -63,7 +63,7 @@ function getRedirect(endpoint, type, clientData, authId, state) {
             'scope': login.scopes.join(' '),
             'state': state,
             // TODO: How to handle multiple redirect_uris?
-            'redirect_uri': clientData['redirect_uris'][0],
+            'redirect_uri': _.get(clientData, 'redirect_uris[0]'),
         };
 
         // Construct URl
@@ -127,6 +127,8 @@ module.exports._getToken = getToken;
 var wellKnown = require('./well-known.js');
 var metadata = require('../metadata.js');
 module.exports.getAuth = _.memoize(function getAuth(authId) {
+    var STATE = 'DEADBEEF';
+
     // Support hardcoded token
     if (config.logins[authId].token) {
         return Promise.resolve(config.logins[authId].token);
@@ -142,7 +144,7 @@ module.exports.getAuth = _.memoize(function getAuth(authId) {
     // Perefer code flow?
     var type = _.includes(config.types, 'code') ? 'code' : 'token';
 
-    return Promise.join(endpoint, type, clientData, authId, getRedirect)
+    return Promise.join(endpoint, type, clientData, authId, STATE, getRedirect)
         .get(type === 'code' ? 'query' : 'fragment')
         .then(function exchangeCode(res) {
             if (type === 'code') {

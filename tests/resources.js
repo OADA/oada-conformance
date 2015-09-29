@@ -40,11 +40,11 @@ var get = _.memoize(function get(id, token) {
                 case 'bookmarks':
                 case 'resources':
                 case 'meta':
-                    uri.path(id);
+                    uri.path(uri.path() + id);
                     break;
                 default:
                     // Assume its a resource id
-                    uri.path('resources/' + id);
+                    uri.path(uri.path() + 'resources/' + id);
             }
 
             return request.get(uri.toString())
