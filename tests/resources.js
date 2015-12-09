@@ -49,7 +49,16 @@ var get = _.memoize(function get(id, token) {
 
             return request.get(uri.toString())
                 .set('Authorization', token)
-                .promise();
+                .promise()
+                .catch(function(err) {
+                    return (err instanceof request.Error) &&
+                        (err.status === 403 || err.status === 405) &&
+                        (err.res.header.Allow
+                         .toUpperCase().split(', ').indexOf('GET') === -1);
+                }, function(err) {
+                    debug('GET not allowed by URI: ' + uri);
+                    return err.res;
+                });
         });
 });
 

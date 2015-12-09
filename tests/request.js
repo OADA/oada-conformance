@@ -43,4 +43,6 @@ _.forEach(methods, function(method) {
     };
 });
 
+request.Error = request.SuperagentPromiseError;
+
 module.exports = request;
