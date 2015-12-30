@@ -19,7 +19,8 @@ require('bluebird').longStackTraces();
 
 module.exports = {
     server: {
-        uri: 'https://localhost:3000'
+        uri: 'https://localhost:3000',
+        openid: true
     },
     authorization: {
         logins: {

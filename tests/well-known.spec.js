@@ -18,11 +18,15 @@
 var _ = require('lodash');
 
 var wellKnown = require('./well-known.js');
+var config = require('../config.js').get('server');
 
 var DOCS = [
     'oada-configuration',
-    'openid-configuration'
 ];
+
+if (config.openid) {
+    DOCS.push('openid-configuration');
+}
 
 describe('well-known documents', function() {
     _.forEach(DOCS, function(doc) {

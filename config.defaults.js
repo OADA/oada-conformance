@@ -15,6 +15,7 @@
 
 module.exports = {
     server: {
+        openid: false
     },
     authorization: {
         // TODO: Make flows (change to implicit/code?)
