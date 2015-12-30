@@ -19,6 +19,9 @@ var Promise = require('bluebird');
 var expect = require('chai').expect;
 var debug = require('debug')('oada-conformance:bookmarks.spec');
 
+var assert = require('chai').assert;
+require('chai').use(require('chai-as-promised'));
+
 var auth = require('./auth.js');
 var resources = require('./resources.js');
 var config = require('../config.js').get('bookmarks');
@@ -40,7 +43,7 @@ describe('bookmarks', function() {
         });
     });
 
-    it('should exist', function() {
+    it('should be valid', function() {
         var bookmarks = resources.get('bookmarks', this.token);
 
         return formats
@@ -48,14 +51,21 @@ describe('bookmarks', function() {
             .call('validate', bookmarks.get('body'));
     });
 
-    it('should be a resource', function() {
+    // TODO: Is this required? Maybe the previous test handles this?
+    xit('should be a resource', function() {
         var bookmarks = resources.get('bookmarks', this.token).get('body');
         var id = bookmarks.get('_id');
-        var resource = resources.get(id, this.token).get('body');
 
-        return Promise.join(bookmarks, resource, function(bookmarks, resource) {
-            expect(resource).to.deep.equal(bookmarks);
-        });
+        return assert.eventually
+            .ok(id, '/boomarks should have an `_id` field')
+            .then(function(id) {
+                var resource = resources.get(id, this.token).get('body');
+
+                return Promise.join(bookmarks, resource,
+                    function(bookmarks, resource) {
+                        expect(resource).to.deep.equal(bookmarks);
+                    });
+            });
     });
 
     it('should support getting subdocuments', function() {

@@ -16,6 +16,7 @@
 'use strict';
 
 var Promise = require('bluebird');
+var util = require('util');
 var _ = require('lodash');
 var request = require('./request.js');
 var URI = require('urijs');
@@ -24,6 +25,13 @@ var debug = require('debug')('oada-conformance:resources');
 var expect = require('chai').expect;
 
 var wellKnown = require('./well-known.js');
+
+function GetNotAllowedError(err) {
+    Error.call(this);
+    this.message = 'GET not ALLOWed by URI';
+    this.error = err;
+}
+util.inherits(GetNotAllowedError, Error);
 
 // Get a resource
 var get = _.memoize(function get(id, token) {
@@ -43,7 +51,7 @@ var get = _.memoize(function get(id, token) {
                     uri.path(uri.path() + id);
                     break;
                 default:
-                    // Assume its a resource id
+                    // Assume it is a resource id
                     uri.path(uri.path() + 'resources/' + id);
             }
 
@@ -53,11 +61,11 @@ var get = _.memoize(function get(id, token) {
                 .catch(function(err) {
                     return (err instanceof request.Error) &&
                         (err.status === 403 || err.status === 405) &&
-                        (err.res.header.Allow
-                         .toUpperCase().split(', ').indexOf('GET') === -1);
+                        (err.res.header.Allow && err.res.header.Allow
+                            .toUpperCase.split(', ').indexOf('GET') === -1);
                 }, function(err) {
                     debug('GET not allowed by URI: ' + uri);
-                    return err.res;
+                    throw new GetNotAllowedError(err);
                 });
         });
 });
@@ -75,31 +83,43 @@ function getAll(id, token, subDocCb) {
             return subDocCb(id, res);
         });
 
-        return res.get('body').then(function getSubDocs(res) {
-            debug('Got resource: ' + id);
-            debug(res);
+        return res
+            // TODO: How to handle a 204 with content???
+            .tap(function(res) {
+                if (res.status === 204) {
+                    expect(res.body).to
+                        .equal(undefined, '204 Response should have no body');
+                }
+            })
+            .get('body')
+            .then(function getSubDocs(res) {
+                // Find already retrieved subdocuments
+                // TODO: Should this only check for cyles instead?
+                var _id = res && res._id;
 
-            // Find already retrieved subdocuments
-            // TODO: Should this only check for cyles instead?
-            var _id = res._id;
-            if (_id !== undefined && _.includes(ids, _id)) {
-                debug('Found _id: ' + _id + ' thorugh multiple parents');
-                return {};
-            } else {
-                ids.push(_id);
-            }
+                debug('Got resource: ' + id || '');
+                debug(res);
 
-            expect(res).to.exist;
+                if (_id !== undefined && _.includes(ids, _id)) {
+                    debug('Found _id: ' + _id + ' thorugh multiple parents');
+                    return {};
+                } else {
+                    ids.push(_id);
+                }
 
-            // Don't get subparts of strings
-            if (typeof res === 'string') {
-                return {};
-            }
+                expect(res).to.not.equal(undefined);
 
-            return _.map(res, function(val, key) {
-                return _getAll(id + '/' + key);
-            });
-        }).props().return(res);
+                // Don't get subparts of strings
+                if (typeof res === 'string') {
+                    return {};
+                }
+
+                return _.map(res, function(val, key) {
+                    return _getAll(id + '/' + key);
+                });
+            }).props()
+            .return(res)
+            .catch(GetNotAllowedError, _.noop);
     }
 }
 
