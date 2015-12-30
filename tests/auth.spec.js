@@ -17,6 +17,7 @@
 
 var chai = require('chai');
 var expect = chai.expect;
+var assert = chai.assert;
 
 var _ = require('lodash');
 var debug = require('debug')('oada-conformance:auth-tests');
@@ -206,7 +207,8 @@ describe('auth', function() {
                     return redir.get(fragOrQuery)
                         .tap(debug)
                         .then(function(params) {
-                            expect(params).to.have.property(prop);
+                            assert.property(params, prop,
+                                    'should receieve ' + prop);
                         });
                 });
             }
