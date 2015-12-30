@@ -2,6 +2,6 @@
 --require mocha-steps
 --ui bdd
 --slow 500
---timeout 5000
+--timeout 10000
 --recursive
 **/*.spec.js
