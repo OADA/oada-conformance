@@ -17,7 +17,7 @@
 
 var chai = require('chai');
 var expect = chai.expect;
-var assert = chai.assert;
+//var assert = chai.assert;
 
 var _ = require('lodash');
 var debug = require('debug')('oada-conformance:auth-tests');
@@ -196,6 +196,7 @@ describe('auth', function() {
                         });
                 });
 
+                /*
                 it('should work when state not given', function() {
                     var redir = auth._getRedirect(
                         this.endpoint,
@@ -211,6 +212,7 @@ describe('auth', function() {
                                     'should receieve ' + prop);
                         });
                 });
+                */
             }
 
             describe('error responses', function() {
