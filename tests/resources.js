@@ -60,7 +60,7 @@ var get = _.memoize(function get(id, token) {
                 .promise()
                 .catch(function(err) {
                     return (err instanceof request.Error) &&
-                        (err.status === 403 || err.status === 405) &&
+                        (err.status === 405) &&
                         (err.res.header.Allow && err.res.header.Allow
                             .toUpperCase.split(', ').indexOf('GET') === -1);
                 }, function(err) {
