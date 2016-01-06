@@ -61,8 +61,8 @@ var get = _.memoize(function get(id, token) {
                 .catch(function(err) {
                     return (err instanceof request.Error) &&
                         (err.status === 405) &&
-                        (err.res.header.Allow && err.res.header.Allow
-                            .toUpperCase.split(', ').indexOf('GET') === -1);
+                        (err.res.header.allow && err.res.header.allow
+                            .toUpperCase().split(', ').indexOf('GET') === -1);
                 }, function(err) {
                     debug('GET not allowed by URI: ' + uri);
                     throw new GetNotAllowedError(err);
