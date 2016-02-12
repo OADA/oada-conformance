@@ -14,10 +14,5 @@
     "sub": true,
     "freeze": true,
     "eqeqeq": true,
-    "expr": true,
-    "mocha": true,
-    "globals": {
-        "step": false,
-        "xstep": false
-    }
+    "expr": true
 }

@@ -6,17 +6,21 @@
     "node": ">=0.10 <4.0"
   },
   "dependencies": {
+    "beautify-text": "^1.0.0",
+    "blue-tape": "^0.1.11",
     "bluebird": "^2.8.2",
-    "chai": "^3.2.0",
-    "chai-as-promised": "^5.2.0",
+    "chai": "^3.5.0",
+    "chalk": "^1.1.1",
+    "cross-env": "^1.0.7",
     "debug": "^2.2.0",
+    "faucet": "0.0.1",
+    "flat": "^2.0.0",
     "glob": "^6.0.3",
+    "is_js": "^0.8.0",
     "jsonwebtoken": "^5.0.2",
     "jwt-bearer-client-auth": "^0.4.0",
-    "lodash": "^3.10.1",
+    "lodash": "^4.3.0",
     "methods": "^1.1.1",
-    "mocha": "^2.2.5",
-    "mocha-steps": "0.0.1",
     "nconf": "^0.8.2",
     "node-horseman": "^2.1.0",
     "oada-formats": "^1.4.0",
@@ -34,7 +38,8 @@
     "pre-commit": "^1.0.10"
   },
   "scripts": {
-    "check": "cd tests && mocha --opts mocha.opts",
+    "check-tap": "tape tests/*.spec.js --no-color",
+    "check": "cross-env FORCE_COLOR=1 faucet tests/*.spec.js",
     "lint": "jshint --reporter node_modules/jshint-stylish .",
     "style": "jscs ."
   },

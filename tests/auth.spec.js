@@ -15,12 +15,10 @@
 
 'use strict';
 
-var chai = require('chai');
-var expect = chai.expect;
-//var assert = chai.assert;
-
 var _ = require('lodash');
 var debug = require('debug')('oada-conformance:auth-tests');
+
+var test = require('./test');
 
 var config = require('../config.js').get('authorization');
 var auth = require('./auth.js');
@@ -28,281 +26,271 @@ var metadata = require('../metadata.js');
 
 var wellKnown = require('./well-known.js');
 
-describe('auth', function() {
-    before('need oada-configuration', function() {
-        var self = this;
-        return wellKnown.get('oada-configuration')
-            .then(function(oadaConfig) {
-                self.oadaConfig = oadaConfig;
+test.describe('auth', function(t) {
+    return wellKnown.get('oada-configuration').then(function(oadaConfig) {
+
+        // https://tools.ietf.org/html/rfc7591
+        t.describe('oauth-dyn-reg (rfc7591)', function(t) {
+            var endpoint = oadaConfig['registration_endpoint'];
+
+            t.test('registation endpoint', function(t) {
+                t.ok(endpoint, 'oada-configuration has registration_endpoint');
+                //t.ok(is.url(endpoint), 'registration_endpoint is URL');
+                t.is.url(endpoint,  'registration_endpoint is URL');
+                t.end();
             });
-    });
 
-    // https://tools.ietf.org/html/rfc7591
-    describe('oauth-dyn-reg (rfc7591)', function() {
-        before('need registration_endpoint', function() {
-            this.endpoint = this.oadaConfig['registration_endpoint'];
-            expect(this.endpoint).to.be.a('string');
-        });
-
-        // https://tools.ietf.org/html/rfc7591#section-3.2.1
-        // https://tools.ietf.org/html/rfc7591#section-2
-        it('should support registering with valid metadata', function() {
-            return auth._register(this.endpoint, metadata).then(function(res) {
-                expect(res.status).to.equal(201);
-                expect(res.type).to.equal('application/json');
-                // TODO: check schema
-                //expect(res.body).to.be.jsonSchema(metadataSchema);
+            // https://tools.ietf.org/html/rfc7591#section-3.2.1
+            // https://tools.ietf.org/html/rfc7591#section-2
+            t.test('registering with valid metadata', function(t) {
+                return auth._register(endpoint, metadata)
+                    .then(function(res) {
+                        t.equal(res.status, 201, 'responds 201 Created');
+                        t.equal(res.type, 'application/json',
+                               'responds with application/json');
+                        // TODO: check schema
+                        //expect(res.body).to.be.jsonSchema(metadataSchema);
+                    });
             });
-        });
 
-        // https://tools.ietf.org/html/rfc7591#section-3.2.2
-        //TODO: Is this required?
-        it('should reject invalid metadata', function() {
-            return auth._register(this.endpoint, {}).catch(function(err) {
-                expect(err.status).to.equal(400);
-                // Check schema for error body?
-                expect(err.body.error).to.be.ok;
+            // https://tools.ietf.org/html/rfc7591#section-3.2.2
+            //TODO: Is this required?
+            t.test('registering with invalid metadata', function(t) {
+                return auth._register(endpoint, {})
+                    .catch(_.identity)
+                    .then(function(resp) {
+                        t.equal(resp && resp.status, 400,
+                                'respsonds 400 Bad Request');
+                        // Check schema for error body?
+                        t.ok(
+                            resp && resp.body && resp.body.error,
+                            'responds with OADA Error'
+                        );
+                    });
             });
-            /*
-            return expect(auth._register(REG_ENDPOINT, {}))
-                .to.eventually.be.rejectedWith('got 400');
-            */
+
+            t.todo('should reject metadata with untrusted software_statement');
         });
 
-        xit('should reject metadata with untrusted software_statement');
-    });
+        t.describe('OAuth 2.0', function(t) {
+            var types = config.types;
+            var regEndpoint = oadaConfig['registration_endpoint'];
+            var endpoint = oadaConfig['authorization_endpoint'];
+            var tokEndpoint = oadaConfig['token_endpoint'];
 
-    describe('OAuth 2.0', function() {
-        var types = config.types;
+            // Get registered client data (Promise)
+            var clientData = auth._register(regEndpoint, metadata).get('body');
 
-        before('need registration_endpoint', function() {
-            this.regEndpoint = this.oadaConfig['registration_endpoint'];
-            expect(this.regEndpoint).to.be.a('string');
-        });
-
-        before('need authorization endpoint', function() {
-            this.endpoint = this.oadaConfig['authorization_endpoint'];
-            expect(this.endpoint).to.be.a('string');
-        });
-
-        if (types.indexOf('code') >= 0) {
-            before('need token endpoint', function() {
-                this.tokEndpoint = this.oadaConfig['token_endpoint'];
-                expect(this.tokEndpoint).to.be.a('string');
-            });
-        }
-
-        before('need registered client data', function() {
-            var self = this;
-            return auth._register(this.regEndpoint, metadata)
-                .get('body')
-                .then(function(clientData) {
-                    self.clientData = clientData;
-                });
-        });
-
-        // Loop over login x type combinations
-        var logins = Object.keys(config.logins);
-        _.forEach(logins, function(login) {
-            describe('login: ' + login, function() {
-                _.forEach(types, function(type) {
-                    var flow = type === 'code' ? 'code' : 'implicit';
-                    describe(flow + ' flow', function() {
-                        genTokenTest(type, login);
+            return clientData.then(function(clientData) {
+                // Loop over login x type combinations
+                var logins = Object.keys(config.logins);
+                logins.forEach(function(login) {
+                    types.forEach(function(type) {
+                        var flow = type === 'code' ? 'code' : 'implicit';
+                        t.describe('login: ' + login, function(t) {
+                            t.describe('flow: ' + flow, function(t) {
+                                genTokenTest(t, type, login);
+                            });
+                        });
                     });
                 });
-            });
-        });
 
-        function genTokenTest(type, login) {
-            var n = config.logins[login].fail ? 'not ' : '';
-            var fragOrQuery = type === 'code' ? 'query' : 'fragment';
-            var prop = type === 'token' ? 'access_token' : type;
+                function genTokenTest(t, type, login) {
+                    var n = config.logins[login].fail ? 'not ' : '';
+                    var fragOrQuery = type === 'code' ? 'query' : 'fragment';
+                    var prop = type === 'token' ? 'access_token' : type;
 
-            describe('getting token', function() {
-                // step doesn't work with Promises...
-                step('should ' + n + 'give ' + type, function(done) {
-                    var state = '1234';
-                    var self = this;
+                    t.describe('getting token', function(t) {
+                        var resp;
 
-                    var redir = auth._getRedirect(
-                        this.endpoint,
-                        type,
-                        this.clientData,
-                        login,
-                        state
-                    );
+                        t.test('does ' + n + 'give ' + type, function(t) {
+                            var state = '1234';
 
-                    var p;
-                    if (config.logins[login].fail) {
-                        p = redir.catch(function(err) {
-                            // TODO: More specific about error?
-                            expect(err).to.be.ok;
+                            var redir = auth._getRedirect(
+                                endpoint,
+                                type,
+                                clientData,
+                                login,
+                                state
+                            );
+
+                            if (config.logins[login].fail) {
+                                return redir.fromNode(function(err) {
+                                    // TODO: More specific about error?
+                                    t.ok(err, 'rejects invalid login');
+                                });
+                            } else {
+                                return redir.get(fragOrQuery)
+                                    .tap(debug)
+                                    .then(function(params) {
+                                        t.ok(
+                                            params[prop],
+                                            'responds with ' + type
+                                        );
+
+                                        resp = params[prop];
+                                    });
+                            }
                         });
-                    } else {
-                        p = redir.get(fragOrQuery)
-                            .tap(debug)
-                            .then(function(params) {
-                                expect(params).to.have.property(prop);
 
-                                self[prop] = params[prop];
+                        if (!n) {
+                            // conditional testing
+                            t.codeTest = type === 'code' ? t.test : t.skip;
+                            t.codeTest('gives token for code', function(t) {
+                                var token = auth._getToken(
+                                    tokEndpoint,
+                                    clientData,
+                                    resp
+                                );
+
+                                return token.get('body')
+                                    .tap(debug)
+                                    .then(function(token) {
+                                        // TODO: Token schema?
+                                        var hasTok = token &&
+                                                token['access_token'] &&
+                                                token['token_type'];
+                                        t.ok(hasTok,
+                                                'responds with access token');
+                                    });
                             });
+
+                            // TODO: switch below todos to codeTest
+                            t.todo('should only redeem code once');
+                            t.todo('should invalidate token when code reused');
+                        }
+                    });
+
+                    if (!config.logins[login].fail) {
+                        t.test('returns state when given', function(t) {
+                            var state = '1234';
+
+                            var redir = auth._getRedirect(
+                                endpoint,
+                                type,
+                                clientData,
+                                login,
+                                state
+                            );
+
+                            return redir.tap(debug).get(fragOrQuery)
+                                .tap(debug)
+                                .then(function(params) {
+                                    t.equal(params.state, state,
+                                            'returned state equals sent state');
+                                });
+                        });
+
+                        /* TODO: Require this?
+                        it('should work when state not given', function() {
+                            var redir = auth._getRedirect(
+                                endpoint,
+                                type,
+                                clientData,
+                                login
+                            );
+
+                            return redir.get(fragOrQuery)
+                                .tap(debug)
+                                .then(function(params) {
+                                    assert.property(params, prop,
+                                            'should receieve ' + prop);
+                                });
+                        });
+                        */
                     }
 
-                    return p.nodeify(done);
-                });
+                    t.describe('error responses', function(t) {
+                        // https://tools.ietf.org/html/rfc7523#section-3.1
 
-                if (!n && type === 'code') {
-                    step('should give token for code', function(done) {
-                        var token = auth._getToken(
-                            this.tokEndpoint,
-                            this.clientData,
-                            this.code
-                        );
+                        // http://tools.ietf.org/html/rfc6749#section-4.1.2.1
+                        // http://tools.ietf.org/html/rfc6749#section-4.2.2.1
+                        // TODO: Should this test run?
+                        t.skip('invalid client_id response', function(t) {
+                            var state = '1234';
+                            var data = Object.assign({}, clientData);
+                            // Make client_id wrong
+                            data['client_id'] += 'foo';
 
-                        return token.get('body')
-                            .tap(debug)
-                            .then(function(token) {
-                                // TODO: Token schema?
-                                expect(token).to.include
-                                    .keys('access_token', 'token_type');
-                            })
-                            .nodeify(done);
-                    });
+                            var redir = auth._getRedirect(
+                                endpoint,
+                                type,
+                                data,
+                                login,
+                                state
+                            );
 
-                    xstep('should only redeem code once');
+                            return redir
+                                .catch(_.identity)
+                                .get(fragOrQuery)
+                                .then(function(err) {
+                                    var ERR_CODES = [
+                                        'invalid_request',
+                                        'unauthorized_client',
+                                        'access_denied',
+                                        'unsupported_response_type',
+                                        'invalid_scope',
+                                        'server_error',
+                                        'temporarily_unavailable'
+                                    ];
 
-                    xstep('should invalidate token when code reused');
-
-                }
-            });
-
-            if (!config.logins[login].fail) {
-                it('should return state when given', function() {
-                    var state = '1234';
-
-                    var redir = auth._getRedirect(
-                        this.endpoint,
-                        type,
-                        this.clientData,
-                        login,
-                        state
-                    );
-
-                    return redir.tap(debug).get(fragOrQuery)
-                        .tap(debug)
-                        .then(function(params) {
-                            expect(params.state).to.equal(state);
+                                    // TODO: Schema?
+                                    t.includes(ERR_CODES, err.error,
+                                            'error field is an allowed code');
+                                    t.deepEqual(err.state, state,
+                                            'returned state equals sent state');
+                                });
                         });
-                });
 
-                /*
-                it('should work when state not given', function() {
-                    var redir = auth._getRedirect(
-                        this.endpoint,
-                        type,
-                        this.clientData,
-                        login
-                    );
+                        // conditional testing
+                        t.codeTest = type === 'code' ? t.test : t.skip;
+                        // TODO: Check more than just wrong code
+                        // http://tools.ietf.org/html/rfc6749#section-5.2
+                        t.codeTest('invalid code response', function(t) {
+                            var state = '1234';
+                            var redir = auth._getRedirect(
+                                endpoint,
+                                type,
+                                clientData,
+                                login,
+                                state
+                            );
 
-                    return redir.get(fragOrQuery)
-                        .tap(debug)
-                        .then(function(params) {
-                            assert.property(params, prop,
-                                    'should receieve ' + prop);
+                            return redir
+                                .get('query')
+                                .get('code')
+                                .then(function(code) {
+                                    return auth._getToken(
+                                            tokEndpoint,
+                                            clientData,
+                                            code + 'foo'
+                                    );
+                                })
+                                .catch(_.identity)
+                                .then(function(res) {
+                                    var ERR_CODES = [
+                                        'invalid_request',
+                                        'invalid_client',
+                                        'invalid_grant',
+                                        'unauthorized_client',
+                                        'unsupported_grant_type',
+                                        'invalid_scope'
+                                    ];
+
+                                    t.equal(res && res.status, 400,
+                                            'respsonds 400 Bad Request');
+
+                                    // TODO: Schema?
+                                    t.includes(
+                                        ERR_CODES,
+                                        res && res.body && res.body.error,
+                                        'error field is an allowed code'
+                                    );
+                                });
                         });
-                });
-                */
-            }
-
-            describe('error responses', function() {
-                // https://tools.ietf.org/html/rfc7523#section-3.1
-
-                // http://tools.ietf.org/html/rfc6749#section-4.1.2.1
-                // http://tools.ietf.org/html/rfc6749#section-4.2.2.1
-                // TODO: Not sure how to fix this test...
-                xit('should be correct', function() {
-                    var state = '1234';
-                    var data = _.cloneDeep(this.clientData);
-                    // Make client_id wrong
-                    data['client_id'] += 'foo';
-
-                    var redir = auth._getRedirect(
-                        this.endpoint,
-                        type,
-                        data,
-                        login,
-                        state
-                    );
-
-                    return redir
-                        .get(fragOrQuery)
-                        .then(function(err) {
-                            var ERR_CODES = [
-                                'invalid_request',
-                                'unauthorized_client',
-                                'access_denied',
-                                'unsupported_response_type',
-                                'invalid_scope',
-                                'server_error',
-                                'temporarily_unavailable'
-                            ];
-
-                            // TODO: Schema?
-                            expect(err.error)
-                                .to.satisfy(function inList(error) {
-                                    return _.includes(ERR_CODES, error);
-                                }, 'invalid error code');
-                            expect(err.state).to.equal(state);
-                        });
-                });
-
-                // TODO: Check more than just wrong code
-                // http://tools.ietf.org/html/rfc6749#section-5.2
-                if (type === 'code') {
-                    it('should be correct', function() {
-                        var self = this;
-                        var state = '1234';
-                        var redir = auth._getRedirect(
-                            this.endpoint,
-                            type,
-                            this.clientData,
-                            login,
-                            state
-                        );
-
-                        return redir
-                            .get('query')
-                            .get('code')
-                            .then(function(code) {
-                                return auth._getToken(
-                                        self.tokEndpoint,
-                                        self.clientData,
-                                        code + 'foo'
-                                );
-                            })
-                            .catch(_.identity)
-                            .then(function(res) {
-                                var ERR_CODES = [
-                                    'invalid_request',
-                                    'invalid_client',
-                                    'invalid_grant',
-                                    'unauthorized_client',
-                                    'unsupported_grant_type',
-                                    'invalid_scope'
-                                ];
-
-                                expect(res.status).to.equal(400);
-
-                                // TODO: Schema?
-                                expect(res.body.error)
-                                    .to.satisfy(function inList(error) {
-                                        return _.includes(ERR_CODES, error);
-                                    }, 'invalid error code');
-                            });
                     });
                 }
             });
-        }
+        });
     });
 });

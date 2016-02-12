@@ -13,6 +13,5 @@
     "trailing": true,
     "freeze": true,
     "eqeqeq": true,
-    "expr": true,
-    "mocha": true
+    "expr": true
 }

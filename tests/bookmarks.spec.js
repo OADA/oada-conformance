@@ -16,11 +16,9 @@
 'use strict';
 
 var Promise = require('bluebird');
-var expect = require('chai').expect;
 var debug = require('debug')('oada-conformance:bookmarks.spec');
 
-var assert = require('chai').assert;
-require('chai').use(require('chai-as-promised'));
+var test = require('./test');
 
 var auth = require('./auth.js');
 var resources = require('./resources.js');
@@ -33,73 +31,78 @@ packs.forEach(function(pack) {
     formats.use(require(pack));
 });
 
-describe('bookmarks', function() {
+test.describe('bookmarks', function(t) {
+    // Have to get token corrensponding to config.login user
+    return auth.getAuth(config.login).then(function(token) {
 
-    before('need token for login ' + config.login, function() {
-        var self = this;
+        t.test('should be valid', function(st) {
+            var bookmarks = resources.get('bookmarks', token);
 
-        return auth.getAuth(config.login).then(function(token) {
-            self.token = token;
+            return formats
+                .model('application/vnd.oada.bookmarks.1+json')
+                .call('validate', bookmarks.get('body'))
+                .then(function() {
+                    st.pass('/bookmarks valid');
+                });
+
         });
-    });
 
-    it('should be valid', function() {
-        var bookmarks = resources.get('bookmarks', this.token);
+        // TODO: Is this required? Maybe the previous test handles this?
+        t.todo('should be a resource', function(st) {
+            var bookmarks = resources.get('bookmarks', token).get('body');
+            var id = bookmarks.get('_id');
 
-        return formats
-            .model('application/vnd.oada.bookmarks.1+json')
-            .call('validate', bookmarks.get('body'));
-    });
+            return id
+                .tap(function(id) {
+                    st.ok(id, '/bookmarks has an `_id` field');
+                })
+                .tap(function(id) {
+                    var resource = resources.get(id, token).get('body');
 
-    // TODO: Is this required? Maybe the previous test handles this?
-    xit('should be a resource', function() {
-        var bookmarks = resources.get('bookmarks', this.token).get('body');
-        var id = bookmarks.get('_id');
+                    return Promise.join(bookmarks, resource,
+                        function(bookmarks, resource) {
+                            st.deepEqual(resource, bookmarks,
+                                '/bookmarks equals corresponding resource');
+                        });
+                });
+        });
 
-        return assert.eventually
-            .ok(id, '/boomarks should have an `_id` field')
-            .then(function(id) {
-                var resource = resources.get(id, this.token).get('body');
+        // TODO: Rewrite to run tests as documents are retrieved
+        // currently gets *all* documents and then tests them
+        t.test('should support getting subdocuments', function(st) {
+            //var SUB_TIMEOUT = 100; // Add to timeout for each subdocument?
+            //var self = this;
 
-                return Promise.join(bookmarks, resource,
-                    function(bookmarks, resource) {
-                        expect(resource).to.deep.equal(bookmarks);
-                    });
+            return resources.getAll('bookmarks', token, function(id, res) {
+                // TODO: Check schema?
+                st.notEqual(res.body, undefined, 'has a body: ' + id);
+
+                // Increase timeout
+                //self.timeout(self.timeout() + SUB_TIMEOUT);
+
+                // Only validate resources at their root
+                var cLocation = res.res.headers['content-location'];
+                if (cLocation &&
+                        cLocation.match(/^.*\/resources\/[^\/]+\/?$/) &&
+                        !res.request.url.match(/_meta$/)) {
+                    var err;
+                    return formats
+                        .model(res.type)
+                        .call('validate', res.body)
+                        .catch(Formats.ValidationError, function(e) {
+                            // TODO: I think this is the wrong way to do it...
+                            err = e;
+                        })
+                        .then(function() {
+                            st.error(err, 'matches schema: ' + id);
+                        })
+                        .catch(Formats.MediaTypeNotFoundError, function(e) {
+                            debug('Model for ' + e.message + ' not found');
+                        });
+                }
             });
-    });
-
-    it('should support getting subdocuments', function() {
-        var SUB_TIMEOUT = 100; // Add to timeout for each subdocument?
-        var self = this;
-
-        return resources.getAll('bookmarks', this.token, function(id, res) {
-            // TODO: Check schema?
-            expect(res).to.have.property('body');
-
-            // Increase timeout
-            self.timeout(self.timeout() + SUB_TIMEOUT);
-
-            // Only validate resources at their root
-            var cLocation = res.res.headers['content-location'];
-            if (cLocation && cLocation.match(/^.*\/resources\/[^\/]+\/?$/) &&
-                    !res.request.url.match(/_meta$/)) {
-                return formats
-                    .model(res.type)
-                    .call('validate', res.body)
-                    .catch(Formats.MediaTypeNotFoundError, function(e) {
-                        debug('Model for ' + e.message + ' not found');
-                    })
-                    .catch(Formats.ValidationError, function(e) {
-                        debug(res.request.url + ' had validation error: ' +
-                                e.message);
-
-                        // How to do this without killing the whole operation?
-                        //throw e;
-                    });
-            }
         });
+
+        t.todo('should have CORS enabled');
     });
-
-    xit('should have CORS enabled');
 });
-

@@ -15,7 +15,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var test = require('./test');
 
 var wellKnown = require('./well-known.js');
 var config = require('../config.js').get('server');
@@ -28,17 +28,17 @@ if (config.openid) {
     DOCS.push('openid-configuration');
 }
 
-describe('well-known documents', function() {
-    _.forEach(DOCS, function(doc) {
-        describe(doc, function() {
+test.describe('well-known documents', function(t) {
+    DOCS.forEach(function(doc) {
+        t.test(doc, function(t) {
+            t.todo('should match schema');
+
+            t.todo('should have CORS enabled');
+
             // TODO: Remove this test once others are implemented?
-            it('should exist', function() {
-                return wellKnown.get(doc);
+            return wellKnown.get(doc).then(function(res) {
+                t.ok(res, 'exists');
             });
-
-            xit('should match schema');
-
-            xit('should have CORS enabled');
         });
     });
 });

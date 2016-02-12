@@ -55,15 +55,16 @@ var get = _.memoize(function get(id, token) {
                     uri.path(uri.path() + 'resources/' + id);
             }
 
+            debug('Attempting to GET: ' + id);
             return request.get(uri.toString())
                 .set('Authorization', token)
                 .promise()
-                .catch(function(err) {
+                .catch(function checkAllow(err) {
                     return (err instanceof request.Error) &&
                         (err.status === 405) &&
                         (err.res.header.allow && err.res.header.allow
                             .toUpperCase().split(', ').indexOf('GET') === -1);
-                }, function(err) {
+                }, function getNotAllowed(err) {
                     debug('GET not allowed by URI: ' + uri);
                     throw new GetNotAllowedError(err);
                 });
@@ -97,7 +98,7 @@ function getAll(id, token, subDocCb) {
                 // TODO: Should this only check for cyles instead?
                 var _id = res && res._id;
 
-                debug('Got resource: ' + id || '');
+                debug('Got: ' + id || '');
                 debug(res);
 
                 if (_id !== undefined && _.includes(ids, _id)) {
@@ -117,7 +118,8 @@ function getAll(id, token, subDocCb) {
                 return _.map(res, function(val, key) {
                     return _getAll(id + '/' + key);
                 });
-            }).props()
+            })
+            .props()
             .return(res)
             .catch(GetNotAllowedError, _.noop);
     }
