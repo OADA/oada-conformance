@@ -81,11 +81,14 @@ test.describe('bookmarks', function(t) {
                 //self.timeout(self.timeout() + SUB_TIMEOUT);
 
                 // Only validate resources at their root
+                /*
                 var cLocation = res.res.headers['content-location'];
                 if (cLocation &&
                         cLocation.match(/^.*\/resources\/[^\/]+\/?$/) &&
-                        !res.request.url.match(/_meta$/)) {
+                */
+                if (res.body && res.body._id) {
                     var err;
+                    var skip = false;
                     return formats
                         .model(res.type)
                         .call('validate', res.body)
@@ -93,11 +96,14 @@ test.describe('bookmarks', function(t) {
                             // TODO: I think this is the wrong way to do it...
                             err = e;
                         })
-                        .then(function() {
-                            st.error(err, 'matches schema: ' + id);
-                        })
                         .catch(Formats.MediaTypeNotFoundError, function(e) {
                             debug('Model for ' + e.message + ' not found');
+                            skip = e.message;
+                        })
+                        .then(function() {
+                            st.error(err, 'matches schema: ' + id, {
+                                skip: skip
+                            });
                         });
                 }
             });
