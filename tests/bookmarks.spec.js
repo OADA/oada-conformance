@@ -70,9 +70,8 @@ test.describe('bookmarks', function(t) {
 
         // TODO: Rewrite to run tests as documents are retrieved
         // currently gets *all* documents and then tests them
-        t.test('supports getting subdocuments', function(t) {
+        t.test('has valid subdocuments', function(t) {
             return resources.getAll('bookmarks', token, function(id, res) {
-                // TODO: Check schema?
                 t.notEqual(res.body, undefined, 'has a body: ' + id);
 
                 if (res.body && res.body._id) {
@@ -90,6 +89,17 @@ test.describe('bookmarks', function(t) {
                             });
                         })
                         .catch(function() {});
+                    /* TODO: Fails because of rev. How to handle?
+                        .then(function() {
+                            return resources.get(res.body._id, token);
+                        })
+                        .get('body')
+                        .nodeify(function(err, body) {
+                            t.deepEqual(res.body, body,
+                                    'matches /resources doc: ' + id);
+                        })
+                        .catch(function() {});
+                    */
                 }
             });
         });
