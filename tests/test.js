@@ -60,32 +60,10 @@ function commentStr(str) {
 }
 
 // Make comments work better with faucet
-function fixComment(self, fun) {
-    var ffun = function() {
-        var args = Array.prototype.slice.call(arguments);
-        var cb = args.pop();
-
-        var cb2 = function(t) {
-            var comment = t.comment;
-            t.comment = function betterComment(message) {
-                return comment.call(t, commentStr(message));
-            };
-            t.test = fixComment(t, t.test);
-
-            return cb(t);
-        };
-        args.push(cb2);
-
-        return fun.apply(self, args);
-    };
-
-    return Object.assign(ffun, fun);
-}
-
-var test = fixComment(tape, tape);
-test.test = test;
-test.only = fixComment(tape, tape.only);
-test.todo = test.todo || test.skip; // TAP todo is missing?
+var comment = tape.Test.prototype.comment;
+tape.Test.prototype.comment = function(msg) {
+    return comment.call(this, commentStr(msg));
+};
 
 // TODO: Don't like this name...
 function describe(depth, name, cb) {
@@ -116,6 +94,6 @@ function describe(depth, name, cb) {
         t.end();
     });
 }
-test.describe = describe.bind(test, 1);
+tape.describe = describe.bind(tape, 1);
 
-module.exports = test;
+module.exports = tape;
