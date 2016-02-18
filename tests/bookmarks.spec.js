@@ -75,6 +75,10 @@ test.describe('bookmarks', function(t) {
                 t.notEqual(res.body, undefined, 'has a body: ' + id);
 
                 if (res.body && res.body._id) {
+                    // TODO: _meta schema?
+                    t.ok(res.body._meta, 'has a _meta: ' + id);
+                    t.ok(res.body._meta._metaid, 'has a _metaid: ' + id);
+
                     var skip = false;
                     return formats
                         .model(res.type)
