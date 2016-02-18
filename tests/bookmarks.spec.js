@@ -35,33 +35,34 @@ test.describe('bookmarks', function(t) {
     // Have to get token corrensponding to config.login user
     return auth.getAuth(config.login).then(function(token) {
 
-        t.test('should be valid', function(st) {
+        t.test('is valid', function(t) {
             var bookmarks = resources.get('bookmarks', token);
 
             return formats
                 .model('application/vnd.oada.bookmarks.1+json')
                 .call('validate', bookmarks.get('body'))
-                .then(function() {
-                    st.pass('/bookmarks valid');
-                });
+                .nodeify(function(err) {
+                    t.error(err, 'matches schema');
+                })
+                .catch(function() {});
 
         });
 
         // TODO: Is this required? Maybe the previous test handles this?
-        t.todo('should be a resource', function(st) {
+        t.todo('is a resource', function(t) {
             var bookmarks = resources.get('bookmarks', token).get('body');
             var id = bookmarks.get('_id');
 
             return id
                 .tap(function(id) {
-                    st.ok(id, '/bookmarks has an `_id` field');
+                    t.ok(id, '/bookmarks has an `_id` field');
                 })
                 .tap(function(id) {
                     var resource = resources.get(id, token).get('body');
 
                     return Promise.join(bookmarks, resource,
                         function(bookmarks, resource) {
-                            st.deepEqual(resource, bookmarks,
+                            t.deepEqual(resource, bookmarks,
                                 '/bookmarks equals corresponding resource');
                         });
                 });
@@ -69,46 +70,30 @@ test.describe('bookmarks', function(t) {
 
         // TODO: Rewrite to run tests as documents are retrieved
         // currently gets *all* documents and then tests them
-        t.test('should support getting subdocuments', function(st) {
-            //var SUB_TIMEOUT = 100; // Add to timeout for each subdocument?
-            //var self = this;
-
+        t.test('supports getting subdocuments', function(t) {
             return resources.getAll('bookmarks', token, function(id, res) {
                 // TODO: Check schema?
-                st.notEqual(res.body, undefined, 'has a body: ' + id);
+                t.notEqual(res.body, undefined, 'has a body: ' + id);
 
-                // Increase timeout
-                //self.timeout(self.timeout() + SUB_TIMEOUT);
-
-                // Only validate resources at their root
-                /*
-                var cLocation = res.res.headers['content-location'];
-                if (cLocation &&
-                        cLocation.match(/^.*\/resources\/[^\/]+\/?$/) &&
-                */
                 if (res.body && res.body._id) {
-                    var err;
                     var skip = false;
                     return formats
                         .model(res.type)
                         .call('validate', res.body)
-                        .catch(Formats.ValidationError, function(e) {
-                            // TODO: I think this is the wrong way to do it...
-                            err = e;
-                        })
                         .catch(Formats.MediaTypeNotFoundError, function(e) {
                             debug('Model for ' + e.message + ' not found');
                             skip = e.message;
                         })
-                        .then(function() {
-                            st.error(err, 'matches schema: ' + id, {
+                        .nodeify(function(err) {
+                            t.error(err, 'matches schema: ' + id, {
                                 skip: skip
                             });
-                        });
+                        })
+                        .catch(function() {});
                 }
             });
         });
 
-        t.todo('should have CORS enabled');
+        t.todo('has CORS enabled');
     });
 });
