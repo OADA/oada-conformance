@@ -15,31 +15,43 @@
 
 'use strict';
 
+var Formats = require('oada-formats');
+var formats = new Formats();
+var packs = require('../config.js').get('options:oadaFormatsPackages') || [];
+packs.forEach(function(pack) {
+    formats.use(require(pack));
+});
+
 var test = require('./test');
 
 var wellKnown = require('./well-known.js');
 var config = require('../config.js').get('server');
 
-var DOCS = [
-    'oada-configuration',
-];
-
-if (config.openid) {
-    DOCS.push('openid-configuration');
-}
-
 test.describe('well-known documents', function(t) {
-    DOCS.forEach(function(doc) {
-        t.test(doc, function(t) {
-            t.todo('should match schema');
+    t.test('oada-configuration', function(t) {
+        return wellKnown.get('oada-configuration').then(function(res) {
 
-            t.todo('should have CORS enabled');
+            t.todo('has CORS enabled');
 
-            // TODO: Remove this test once others are implemented?
-            return wellKnown.get(doc).then(function(res) {
-                t.ok(res, 'exists');
-            });
+            return formats
+                .model('application/vnd.oada.oada-configuration.1+json')
+                .call('validate', res)
+                .nodeify(function(err) {
+                    t.error(err, 'matches schema');
+                })
+                .catch(function() {});
         });
     });
+
+    t.test('openid-configuration', function(t) {
+        return wellKnown.get('openid-configuration').then(function(res) {
+            // TODO: Remove this test once others are implemented?
+            t.ok(res, 'exists');
+
+            t.todo('has CORS enabled');
+
+            t.todo('is valid');
+        });
+    }, {skip: !config.openid});
 });
 
