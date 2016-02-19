@@ -16,6 +16,7 @@
 'use strict';
 
 var Promise = require('bluebird');
+var crypto = require('crypto');
 var debug = require('debug')('oada-conformance:bookmarks.spec');
 
 var test = require('./test');
@@ -109,5 +110,33 @@ test.describe('bookmarks', function(t) {
         });
 
         t.todo('has CORS enabled');
+    });
+});
+
+test.describe('error responses', function(t) {
+    return auth.getAuth(config.login).then(function(token) {
+        t.test('GET with bad token', function(t) {
+            return resources.get('bookmarks', token + 'foo')
+                .catch(function(err) { return err; })
+                .then(function(res) {
+                    t.equal(res.status, 401, 'responds 401 Unathorized');
+                    t.todo('check OADA error'); // TODO: OADA error schema?
+                });
+        });
+
+        t.test('GET on non-existent resource', function(t) {
+            var bytes = Promise.fromNode(function(done) {
+                return crypto.randomBytes(16, done);
+            });
+
+            return resources.get(bytes.call('toString', 'hex'), token)
+                .catch(function(err) { return err; })
+                .then(function(res) {
+                    // TODO: Does the status code matter?
+                    t.is.within(res.status, 399, 500, 'responds with 4xx code');
+                    //t.equal(res.status, 404, 'responds 404 Not Found');
+                    t.todo('check OADA error'); // TODO: OADA error schema?
+                });
+        });
     });
 });
