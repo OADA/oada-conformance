@@ -9,7 +9,3 @@ Automated tests for OADA API
 
 ## Specifying a config file ##
     CONFIG='/path/to/file.json' npm run check
-
-## Can pass mocha options (e.g.) ##
-    npm run check -- --grep well-known
-
