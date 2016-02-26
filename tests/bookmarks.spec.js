@@ -93,18 +93,18 @@ test.describe('bookmarks', function(t) {
                                 skip: skip
                             });
                         })
-                        .catch(function() {});
-                    /* TODO: Fails because of rev. How to handle?
+                        .catch(function() {})
                         .then(function() {
                             return resources.get(res.body._id, token);
                         })
                         .get('body')
                         .nodeify(function(err, body) {
-                            t.deepEqual(res.body, body,
+                            var bKeys = Object.keys(res.body);
+                            var rKeys = Object.keys(body);
+                            t.deepEqual(bKeys, rKeys,
                                     'matches /resources doc: ' + id);
                         })
                         .catch(function() {});
-                    */
                 }
             });
         });
