@@ -56,6 +56,23 @@ test.describe('auth', function(t) {
             // https://tools.ietf.org/html/rfc7591#section-3.2.2
             //TODO: Is this required?
             t.test('registering with invalid metadata', function(t) {
+                var metadata2 = {
+                    'software_statement': metadata['software_statement'] + 'foo'
+                };
+                return auth._register(endpoint, metadata2)
+                    .catch(_.identity)
+                    .then(function(resp) {
+                        t.equal(resp && resp.status, 400,
+                                'respsonds 400 Bad Request');
+                        // Check schema for error body?
+                        t.ok(
+                            resp && resp.body && resp.body.error,
+                            'responds with OADA Error'
+                        );
+                    });
+            });
+
+            t.test('registering with no metadata', function(t) {
                 return auth._register(endpoint, {})
                     .catch(_.identity)
                     .then(function(resp) {
