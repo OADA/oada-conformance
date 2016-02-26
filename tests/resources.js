@@ -69,7 +69,7 @@ var get = _.memoize(function get(id, token) {
                     throw new GetNotAllowedError(err);
                 });
         });
-});
+}, function() { return arguments; });
 
 // Get a resource and all subdocuments
 function getAll(id, token, subDocCb) {

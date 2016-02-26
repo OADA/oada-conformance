@@ -49,7 +49,7 @@ var register = _.memoize(function register(endpoint, metadata) {
         .accept('application/json')
         .send(metadata)
         .promise();
-});
+}, function() { return arguments; });
 module.exports._register = register;
 
 // Get access code
