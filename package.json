@@ -29,7 +29,7 @@
     "superagent": "^1.4.0",
     "superagent-bluebird-promise": "^2.1.0",
     "urijs": "^1.16.0",
-    "valleyix-formats": "^1.2.0"
+    "valleyix-formats": "^2.0.0"
   },
   "devDependencies": {
     "jscs": "^2.1.1",
