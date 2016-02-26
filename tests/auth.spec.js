@@ -34,9 +34,9 @@ test.describe('auth', function(t) {
             var endpoint = oadaConfig['registration_endpoint'];
 
             t.test('registation endpoint', function(t) {
-                t.ok(endpoint, 'oada-configuration has registration_endpoint');
+                t.ok(endpoint, 'should have registration_endpoint');
                 //t.ok(is.url(endpoint), 'registration_endpoint is URL');
-                t.is.url(endpoint,  'registration_endpoint is URL');
+                t.is.url(endpoint,  'registration_endpoint should be a URL');
                 t.end();
             });
 
@@ -45,9 +45,9 @@ test.describe('auth', function(t) {
             t.test('registering with valid metadata', function(t) {
                 return auth._register(endpoint, metadata)
                     .then(function(res) {
-                        t.equal(res.status, 201, 'responds 201 Created');
+                        t.equal(res.status, 201, 'should respond 201 Created');
                         t.equal(res.type, 'application/json',
-                               'responds with application/json');
+                               'should respond with application/json');
                         // TODO: check schema
                         //expect(res.body).to.be.jsonSchema(metadataSchema);
                     });
@@ -63,12 +63,10 @@ test.describe('auth', function(t) {
                     .catch(_.identity)
                     .then(function(resp) {
                         t.equal(resp && resp.status, 400,
-                                'respsonds 400 Bad Request');
+                                'should respsond 400 Bad Request');
                         // Check schema for error body?
-                        t.ok(
-                            resp && resp.body && resp.body.error,
-                            'responds with OADA Error'
-                        );
+                        t.ok(resp && resp.body && resp.body.error,
+                             'should respond with OADA Error');
                     });
             });
 
@@ -77,12 +75,10 @@ test.describe('auth', function(t) {
                     .catch(_.identity)
                     .then(function(resp) {
                         t.equal(resp && resp.status, 400,
-                                'respsonds 400 Bad Request');
+                                'should respsond 400 Bad Request');
                         // Check schema for error body?
-                        t.ok(
-                            resp && resp.body && resp.body.error,
-                            'responds with OADA Error'
-                        );
+                        t.ok(resp && resp.body && resp.body.error,
+                             'should respond with OADA Error');
                     });
             });
 
@@ -134,16 +130,14 @@ test.describe('auth', function(t) {
                             if (config.logins[login].fail) {
                                 return redir.fromNode(function(err) {
                                     // TODO: More specific about error?
-                                    t.ok(err, 'rejects invalid login');
+                                    t.ok(err, 'should reject invalid login');
                                 });
                             } else {
                                 return redir.get(fragOrQuery)
                                     .tap(debug)
                                     .then(function(params) {
-                                        t.ok(
-                                            params[prop],
-                                            'responds with ' + type
-                                        );
+                                        t.ok(params[prop],
+                                             'should respond with ' + type);
 
                                         resp = params[prop];
                                     });
@@ -168,7 +162,7 @@ test.describe('auth', function(t) {
                                                 token['access_token'] &&
                                                 token['token_type'];
                                         t.ok(hasTok,
-                                                'responds with access token');
+                                             'should respond w/ access token');
                                     });
                             });
 
@@ -194,7 +188,7 @@ test.describe('auth', function(t) {
                                 .tap(debug)
                                 .then(function(params) {
                                     t.equal(params.state, state,
-                                            'returned state equals sent state');
+                                            'state should equal sent state');
                                 });
                         });
 
@@ -253,9 +247,9 @@ test.describe('auth', function(t) {
 
                                     // TODO: Schema?
                                     t.includes(ERR_CODES, err.error,
-                                            'error field is an allowed code');
+                                            'error should have a valid code');
                                     t.deepEqual(err.state, state,
-                                            'returned state equals sent state');
+                                            'state should equal sent state');
                                 });
                         });
 
@@ -295,13 +289,13 @@ test.describe('auth', function(t) {
                                     ];
 
                                     t.equal(res && res.status, 400,
-                                            'respsonds 400 Bad Request');
+                                            'should respsond 400 Bad Request');
 
                                     // TODO: Schema?
                                     t.includes(
                                         ERR_CODES,
                                         res && res.body && res.body.error,
-                                        'error field is an allowed code'
+                                        'error should have a valid code'
                                     );
                                 });
                         });

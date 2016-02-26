@@ -43,7 +43,7 @@ test.describe('bookmarks', function(t) {
                 .model('application/vnd.oada.bookmarks.1+json')
                 .call('validate', bookmarks.get('body'))
                 .nodeify(function(err) {
-                    t.error(err, 'matches schema');
+                    t.error(err, 'should match schema');
                 })
                 .catch(function() {});
 
@@ -56,7 +56,7 @@ test.describe('bookmarks', function(t) {
 
             return id
                 .tap(function(id) {
-                    t.ok(id, '/bookmarks has an `_id` field');
+                    t.ok(id, '/bookmarks should have an `_id` field');
                 })
                 .tap(function(id) {
                     var resource = resources.get(id, token).get('body');
@@ -64,7 +64,7 @@ test.describe('bookmarks', function(t) {
                     return Promise.join(bookmarks, resource,
                         function(bookmarks, resource) {
                             t.deepEqual(resource, bookmarks,
-                                '/bookmarks equals corresponding resource');
+                                '/bookmarks should equal source resource');
                         });
                 });
         });
@@ -73,12 +73,13 @@ test.describe('bookmarks', function(t) {
         // currently gets *all* documents and then tests them
         t.test('has valid subdocuments', function(t) {
             return resources.getAll('bookmarks', token, function(id, res) {
-                t.notEqual(res.body, undefined, 'has a body: ' + id);
+                t.notEqual(res.body, undefined, 'should have a body: ' + id);
 
                 if (res.body && res.body._id) {
                     // TODO: _meta schema?
-                    t.ok(res.body._meta, 'has a _meta: ' + id);
-                    t.ok(res.body._meta._metaid, 'has a _metaid: ' + id);
+                    t.ok(res.body._meta, 'should have _meta: ' + id);
+                    t.ok(res.body._meta._metaid,
+                         'should have have _metaid: ' + id);
 
                     var skip = false;
                     return formats
@@ -89,7 +90,7 @@ test.describe('bookmarks', function(t) {
                             skip = e.message;
                         })
                         .nodeify(function(err) {
-                            t.error(err, 'matches schema: ' + id, {
+                            t.error(err, 'should match schema: ' + id, {
                                 skip: skip
                             });
                         })
@@ -102,7 +103,7 @@ test.describe('bookmarks', function(t) {
                             var bKeys = Object.keys(res.body);
                             var rKeys = Object.keys(body);
                             t.deepEqual(bKeys, rKeys,
-                                    'matches /resources doc: ' + id);
+                                    'should match /resources doc: ' + id);
                         })
                         .catch(function() {});
                 }
@@ -119,7 +120,7 @@ test.describe('error responses', function(t) {
             return resources.get('bookmarks', token + 'foo')
                 .catch(function(err) { return err; })
                 .then(function(res) {
-                    t.equal(res.status, 401, 'responds 401 Unathorized');
+                    t.equal(res.status, 401, 'should respond 401 Unathorized');
                     t.todo('check OADA error'); // TODO: OADA error schema?
                 });
         });
@@ -133,7 +134,8 @@ test.describe('error responses', function(t) {
                 .catch(function(err) { return err; })
                 .then(function(res) {
                     // TODO: Does the status code matter?
-                    t.is.within(res.status, 399, 500, 'responds with 4xx code');
+                    t.is.within(res.status, 399, 500,
+                                'should respond with 4xx code');
                     //t.equal(res.status, 404, 'responds 404 Not Found');
                     t.todo('check OADA error'); // TODO: OADA error schema?
                 });

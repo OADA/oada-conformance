@@ -37,7 +37,7 @@ test.describe('well-known documents', function(t) {
                 .model('application/vnd.oada.oada-configuration.1+json')
                 .call('validate', res)
                 .nodeify(function(err) {
-                    t.error(err, 'matches schema');
+                    t.error(err, 'should match schema');
                 })
                 .catch(function() {});
         });
@@ -46,7 +46,7 @@ test.describe('well-known documents', function(t) {
     t.test('openid-configuration', function(t) {
         return wellKnown.get('openid-configuration').then(function(res) {
             // TODO: Remove this test once others are implemented?
-            t.ok(res, 'exists');
+            t.ok(res, 'should exist');
 
             t.todo('has CORS enabled');
 
