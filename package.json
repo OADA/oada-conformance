@@ -38,8 +38,8 @@
     "pre-commit": "^1.0.10"
   },
   "scripts": {
-    "check-tap": "tape tests/*.spec.js --no-color",
-    "check": "cross-env FORCE_COLOR=1 faucet tests/*.spec.js",
+    "check-tap": "tape \"tests/*.spec.js\" --no-color",
+    "check": "npm run check-tap | cross-env FORCE_COLOR=1 faucet",
     "lint": "jshint --reporter node_modules/jshint-stylish .",
     "style": "jscs ."
   },
