@@ -23,7 +23,7 @@
     "methods": "^1.1.1",
     "nconf": "^0.8.2",
     "node-horseman": "^2.1.0",
-    "oada-formats": "^1.4.0",
+    "oada-formats": "^1.5.0",
     "pem-jwk": "^1.5.1",
     "phantomjs": "^1.9.17",
     "superagent": "^1.4.0",
